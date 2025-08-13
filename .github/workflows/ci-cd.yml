@@ -101,16 +101,18 @@ jobs:
           echo "---- tree (2 levels) ----"
           find . -maxdepth 2 -type f -print
 
-      - name: Normalize jar name (robust)
+      - name: Normalize jar into deploy folder
         run: |
           set -euo pipefail
-          JAR=$(find . -type f -name "*.jar" | head -n1)
+          JAR=$(find . -type f -name "*.jar" -print | head -n1)
           if [ -z "${JAR:-}" ]; then
             echo "No JAR found after artifact download!"; exit 1
           fi
           echo "Found JAR at: $JAR"
-          cp "$JAR" ./app.jar
-          ls -al ./app.jar
+          mkdir -p deploy
+          cp -f "$JAR" deploy/app.jar
+          ls -al deploy/app.jar
+      
 
       - name: Verify files exist (fail fast)
         run: |
@@ -130,8 +132,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: |
-            app.jar
-            application-prod.yml
+            /github/workspace/deploy/app.jar
+            /github/workspace/application-prod.yml
           target: ${{ secrets.SERVER_APP_DIR }}
           overwrite: true
           debug: true
