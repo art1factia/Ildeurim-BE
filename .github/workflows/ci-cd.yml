@@ -1,0 +1,94 @@
+name: CI-CD (Gradle, JDK17)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: true
+
+env:
+  JDK_VERSION: '17'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JDK_VERSION }}
+          cache: gradle
+
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean test bootJar
+
+      - name: Locate artifact
+        id: artifact
+        run: |
+          JAR_PATH=$(ls build/libs/*-SNAPSHOT.jar 2>/dev/null || ls build/libs/*.jar)
+          echo "jar=$JAR_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: ${{ steps.artifact.outputs.jar }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: .
+
+      - name: Prepare application-prod.yml (placeholder)
+        run: |
+          cat > application-prod.yml << 'EOF'
+          # 운영 환경 설정 (지금은 비워둠)
+          # 나중에 DB/토큰 생기면 아래 주석 해제하고 GitHub Secrets로 채워 넣기
+          # spring:
+          #   datasource:
+          #     url: ${DB_URL}
+          #     username: ${DB_USERNAME}
+          #     password: ${DB_PASSWORD}
+          # jwt:
+          #   secret: ${JWT_SECRET}
+          EOF
+
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: |
+            ./*.jar
+            ./application-prod.yml
+          target: ${{ secrets.SERVER_APP_DIR }}
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_APP_DIR }}
+            LATEST_JAR=$(ls -t *.jar | head -n1)
+            mv -f "$LATEST_JAR" app.jar
+            mv -f application-prod.yml application-prod.yml
+            sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
+            sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
