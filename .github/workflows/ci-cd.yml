@@ -1,66 +1,110 @@
-deploy:
-  needs: build
-  runs-on: ubuntu-latest
+name: CI-CD (Gradle, JDK17)
 
-  steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: app-jar
-        path: .
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
-    - name: Show downloaded files (debug)
-      run: |
-        pwd
-        ls -al
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: true
 
-    - name: Normalize jar name to app.jar
-      run: |
-        # 워크스페이스에 있는 첫 번째 jar를 app.jar로 통일
-        JAR=$(ls -1 *.jar | head -n1)
-        if [ -z "$JAR" ]; then
-          echo "No JAR found!"
-          exit 1
-        fi
-        echo "Found JAR: $JAR"
-        mv -f "$JAR" app.jar
-        ls -al app.jar
+env:
+  JDK_VERSION: '17'
 
-    - name: Prepare application-prod.yml (placeholder)
-      run: |
-        cat > application-prod.yml << 'EOF'
-        # 운영 환경 설정 (지금은 비워둠)
-        # spring:
-        #   datasource:
-        #     url: ${DB_URL}
-        #     username: ${DB_USERNAME}
-        #     password: ${DB_PASSWORD}
-        # jwt:
-        #   secret: ${JWT_SECRET}
-        EOF
-        ls -al application-prod.yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Copy to server
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        source: |
-          app.jar
-          application-prod.yml
-        target: ${{ secrets.SERVER_APP_DIR }}
-        overwrite: true
-        debug: true
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JDK_VERSION }}
+          cache: gradle
 
-    - name: Restart service
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        script: |
-          set -e
-          cd ${{ secrets.SERVER_APP_DIR }}
-          sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
-          sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
+      - name: Build with Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean test bootJar
+
+      - name: Locate artifact
+        id: artifact
+        run: |
+          JAR_PATH=$(ls build/libs/*-SNAPSHOT.jar 2>/dev/null || ls build/libs/*.jar)
+          echo "jar=$JAR_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: ${{ steps.artifact.outputs.jar }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: .
+
+      - name: Show downloaded files (debug)
+        run: |
+          pwd
+          ls -al
+
+      - name: Normalize jar name to app.jar
+        run: |
+          # 워크스페이스에 있는 첫 번째 jar를 app.jar로 통일
+          JAR=$(ls -1 *.jar | head -n1)
+          if [ -z "$JAR" ]; then
+            echo "No JAR found!"
+            exit 1
+          fi
+          echo "Found JAR: $JAR"
+          mv -f "$JAR" app.jar
+          ls -al app.jar
+
+      - name: Prepare application-prod.yml (placeholder)
+        run: |
+          cat > application-prod.yml << 'EOF'
+          # 운영 환경 설정 (지금은 비워둠)
+          # spring:
+          #   datasource:
+          #     url: ${DB_URL}
+          #     username: ${DB_USERNAME}
+          #     password: ${DB_PASSWORD}
+          # jwt:
+          #   secret: ${JWT_SECRET}
+          EOF
+          ls -al application-prod.yml
+
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: |
+            app.jar
+            application-prod.yml
+          target: ${{ secrets.SERVER_APP_DIR }}
+          overwrite: true
+          debug: true
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_APP_DIR }}
+            sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
+            sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
