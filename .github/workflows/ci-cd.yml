@@ -71,84 +71,48 @@ jobs:
           ls -al
           find . -maxdepth 3 -type f -name "*.jar" -print
 
-      # 3) JAR을 deploy/app.jar 로 정규화
+      # 3) JAR → deploy/app.jar
       - name: Normalize jar into deploy folder
         run: |
           set -euo pipefail
           JAR=$(find . -type f -name "*.jar" -print | head -n1)
-          if [ -z "${JAR:-}" ]; then
-            echo "No JAR found after artifact download!"; exit 1
-          fi
-          echo "Found JAR at: $JAR"
+          [ -n "${JAR:-}" ] || (echo "No JAR found"; exit 1)
           mkdir -p deploy
-          # 이미 deploy/app.jar면 스킵
-          if [ "$(realpath "$JAR")" = "$(realpath deploy/app.jar 2>/dev/null || echo _)" ]; then
-            echo "Already normalized — skip copy"
-          else
-            cp -f "$JAR" deploy/app.jar
-          fi
-          ls -al deploy/
+          cp -f "$JAR" deploy/app.jar
+          ls -al deploy
 
-      # 4) prod yml (임시/자리표시자) 생성 — 나중에 Secrets로 값 채울 예정
+      # 4) YML → deploy/application-prod.yml  (← 경로 통일!!)
       - name: Prepare application-prod.yml (placeholder)
         run: |
           mkdir -p deploy
           cat > deploy/application-prod.yml << 'EOF'
-          # prod config placeholder (values to be added later via secrets)
-          # 예) 추후:
-          # spring:
-          #   datasource:
-          #     url: ${DB_URL}
-          #     username: ${DB_USERNAME}
-          #     password: ${DB_PASSWORD}
-          # jwt:
-          #   secret: ${JWT_SECRET}
+          # prod config placeholder
           EOF
-          ls -al deploy/
+          ls -al deploy
 
-      # 5) 전송할 파일 존재/크기 검증 (없으면 여기서 실패시켜 원인 파악 쉬움)
+      # 5) 존재 검증 (deploy 안만 검사)
       - name: Verify files exist (fail fast)
         run: |
           set -euo pipefail
           for f in deploy/app.jar deploy/application-prod.yml; do
-            if [ ! -s "$f" ]; then
-              echo "Missing or empty: $f"
-              ls -al
-              ls -al deploy || true
-              exit 1
-            fi
+            [ -s "$f" ] || (echo "Missing or empty: $f" && exit 1)
             echo "OK: $f"
           done
 
-      # 6) 서버에 대상 디렉토리 보장 (필요시 SSH 포트 지정: port: 2222)
-      - name: Ensure target dir exists on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          # port: 22
-          script: |
-            mkdir -p ${{ secrets.SERVER_APP_DIR }}
-            chmod 755 ${{ secrets.SERVER_APP_DIR }}
-            ls -al ${{ secrets.SERVER_APP_DIR }}
-
-      # 7) 파일 전송 — 상대경로 사용(가장 안정적)
+      # 7) 파일 전송 — 상대 경로, 와일드카드로 간단하게
       - name: Copy to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.Server_SSH_KEY }}
-          # port: 22
-          source: |
-            deploy/app.jar
-            deploy/application-prod.yml
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "deploy/*"
           target: ${{ secrets.SERVER_APP_DIR }}
           overwrite: true
           debug: true
 
-      # 8) 서비스 재시작 및 상태 확인
+
+        # 8) 서비스 재시작 및 상태 확인
       - name: Restart service
         uses: appleboy/ssh-action@v1.0.3
         with:
