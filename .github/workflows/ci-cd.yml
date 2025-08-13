@@ -94,8 +94,36 @@ jobs:
             mkdir -p ${{ secrets.SERVER_APP_DIR }}
             chmod 755 ${{ secrets.SERVER_APP_DIR }}
             ls -al ${{ secrets.SERVER_APP_DIR }}
+      - name: Show workspace (recursive debug)
+        run: |
+          pwd
+          ls -al
+          echo "---- tree (2 levels) ----"
+          find . -maxdepth 2 -type f -print
 
-      - name: Copy to server
+      - name: Normalize jar name (robust)
+        run: |
+          set -euo pipefail
+          JAR=$(find . -type f -name "*.jar" | head -n1)
+          if [ -z "${JAR:-}" ]; then
+            echo "No JAR found after artifact download!"; exit 1
+          fi
+          echo "Found JAR at: $JAR"
+          cp "$JAR" ./app.jar
+          ls -al ./app.jar
+
+      - name: Verify files exist (fail fast)
+        run: |
+          set -euo pipefail
+          for f in ./app.jar ./application-prod.yml; do
+            if [ ! -s "$f" ]; then
+              echo "Missing or empty: $f"; ls -al; exit 1
+            fi
+            echo "OK: $f"
+          done
+      
+
+        - name: Copy to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
