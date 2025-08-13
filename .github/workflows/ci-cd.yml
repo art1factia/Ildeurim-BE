@@ -108,6 +108,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "deploy/*"
           target: ${{ secrets.SERVER_APP_DIR }}
+          strip_components: 1
           overwrite: true
           debug: true
 
