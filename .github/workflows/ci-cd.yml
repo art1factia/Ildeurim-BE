@@ -22,72 +22,46 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ env.JDK_VERSION }}
+          java-version: '17'
           cache: gradle
 
-      - name: Build with Gradle
+      - name: Build (Gradle)
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon clean test bootJar
-      - name: check jar
-        run: |
-          ls -al build/libs
 
-      - name: Locate artifact
+      - name: Show build output (debug)
+        run: ls -al build/libs
+
+      - name: Locate artifact path
         id: artifact
         run: |
-          JAR_PATH=$(ls build/libs/*-SNAPSHOT.jar 2>/dev/null || ls build/libs/*.jar)
+          JAR_PATH=$(ls -1 build/libs/*.jar | head -n1)
+          if [ -z "$JAR_PATH" ]; then
+            echo "No jar in build/libs"; exit 1
+          fi
+          echo "Found: $JAR_PATH"
           echo "jar=$JAR_PATH" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-jar
+          name: app-jar            # ⬅ 이 이름을 deploy에서도 동일하게 사용
           path: ${{ steps.artifact.outputs.jar }}
+          if-no-files-found: error
+
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: app-jar
-          path: .
+          name: app-jar          # ⬅ build와 동일한 이름
+          path: .                # 현재 워크스페이스로 다운로드
 
-      - name: Show downloaded files (debug)
-        run: |
-          pwd
-          ls -al
-
-      - name: Normalize jar name to app.jar
-        run: |
-          # 워크스페이스에 있는 첫 번째 jar를 app.jar로 통일
-          JAR=$(ls -1 *.jar | head -n1)
-          if [ -z "$JAR" ]; then
-            echo "No JAR found!"
-            exit 1
-          fi
-          echo "Found JAR: $JAR"
-          mv -f "$JAR" app.jar
-          ls -al app.jar
-
-      - name: Prepare application-prod.yml (placeholder)
-        run: |
-          cat > application-prod.yml << 'EOF'
-          # 운영 환경 설정 (지금은 비워둠)
-          # spring:
-          #   datasource:
-          #     url: ${DB_URL}
-          #     username: ${DB_USERNAME}
-          #     password: ${DB_PASSWORD}
-          # jwt:
-          #   secret: ${JWT_SECRET}
-          EOF
-          ls -al application-prod.yml
-          
-      - name: Show workspace after download
+      - name: Show workspace after download (debug)
         run: |
           pwd
           ls -al
@@ -95,12 +69,20 @@ jobs:
 
       - name: Normalize jar name (robust)
         run: |
-          # 단일/멀티모듈 모두 탐색
           JAR=$(find . -type f -name "*.jar" | head -n1)
-          if [ -z "$JAR" ]; then echo "No JAR found"; exit 1; fi
+          if [ -z "$JAR" ]; then
+            echo "No JAR found after artifact download!"; exit 1
+          fi
           echo "Found JAR: $JAR"
           cp "$JAR" ./app.jar
           ls -al app.jar
+
+      - name: Prepare application-prod.yml (placeholder)
+        run: |
+          cat > application-prod.yml << 'EOF'
+          # prod config placeholder (values to be added later via secrets)
+          EOF
+          ls -al application-prod.yml
 
       - name: Ensure target dir exists on server
         uses: appleboy/ssh-action@v1.0.3
@@ -111,7 +93,7 @@ jobs:
           script: |
             mkdir -p ${{ secrets.SERVER_APP_DIR }}
             chmod 755 ${{ secrets.SERVER_APP_DIR }}
-            
+            ls -al ${{ secrets.SERVER_APP_DIR }}
 
       - name: Copy to server
         uses: appleboy/scp-action@v0.1.7
@@ -137,3 +119,4 @@ jobs:
             cd ${{ secrets.SERVER_APP_DIR }}
             sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
             sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
+
