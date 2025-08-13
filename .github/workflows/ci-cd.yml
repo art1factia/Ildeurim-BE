@@ -58,49 +58,17 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: app-jar          # build와 동일한 이름
-          path: .                # 현재 워크스페이스로 다운로드
+          name: app-jar
+          path: .
 
       - name: Show workspace after download (debug)
         run: |
           pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
           ls -al
           find . -maxdepth 3 -type f -name "*.jar" -print
 
-      - name: Normalize jar name (robust)
-        run: |
-          JAR=$(find . -type f -name "*.jar" | head -n1)
-          if [ -z "$JAR" ]; then
-            echo "No JAR found after artifact download!"; exit 1
-          fi
-          echo "Found JAR: $JAR"
-          cp "$JAR" ./app.jar
-          ls -al app.jar
-
-      - name: Prepare application-prod.yml (placeholder)
-        run: |
-          cat > application-prod.yml << 'EOF'
-          # prod config placeholder (values to be added later via secrets)
-          EOF
-          ls -al application-prod.yml
-
-      - name: Ensure target dir exists on server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            mkdir -p ${{ secrets.SERVER_APP_DIR }}
-            chmod 755 ${{ secrets.SERVER_APP_DIR }}
-            ls -al ${{ secrets.SERVER_APP_DIR }}
-      - name: Show workspace (recursive debug)
-        run: |
-          pwd
-          ls -al
-          echo "---- tree (2 levels) ----"
-          find . -maxdepth 2 -type f -print
-
+      # ✅ 단일 정규화 단계 (deploy/app.jar 로 고정)
       - name: Normalize jar into deploy folder
         run: |
           set -euo pipefail
@@ -110,21 +78,47 @@ jobs:
           fi
           echo "Found JAR at: $JAR"
           mkdir -p deploy
-          cp -f "$JAR" deploy/app.jar
-          ls -al deploy/app.jar
-      
+          # JAR가 이미 deploy/app.jar이면 스킵
+          if [ "$(realpath "$JAR")" = "$(realpath deploy/app.jar 2>/dev/null || echo _)" ]; then
+            echo "Already normalized — skip copy"
+          else
+            cp -f "$JAR" deploy/app.jar
+          fi
+          ls -al deploy/
+
+      - name: Prepare application-prod.yml (placeholder)
+        run: |
+          cat > application-prod.yml << 'EOF'
+          # prod config placeholder (values to be added later via secrets)
+          EOF
+          ls -al application-prod.yml
 
       - name: Verify files exist (fail fast)
         run: |
           set -euo pipefail
-          for f in ./app.jar ./application-prod.yml; do
+          for f in deploy/app.jar application-prod.yml; do
             if [ ! -s "$f" ]; then
-              echo "Missing or empty: $f"; ls -al; exit 1
+              echo "Missing or empty: $f"
+              ls -al
+              ls -al deploy || true
+              exit 1
             fi
             echo "OK: $f"
           done
-      
 
+      - name: Ensure target dir exists on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          # 서버 SSH 포트가 22가 아니라면 아래 줄 추가: port: 2222
+          script: |
+            mkdir -p ${{ secrets.SERVER_APP_DIR }}
+            chmod 755 ${{ secrets.SERVER_APP_DIR }}
+            ls -al ${{ secrets.SERVER_APP_DIR }}
+
+      # ✅ 핵심: source는 "상대 경로"로!
       - name: Copy to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -132,8 +126,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: |
-            /github/workspace/deploy/app.jar
-            /github/workspace/application-prod.yml
+            deploy/app.jar
+            application-prod.yml
           target: ${{ secrets.SERVER_APP_DIR }}
           overwrite: true
           debug: true
@@ -149,4 +143,3 @@ jobs:
             cd ${{ secrets.SERVER_APP_DIR }}
             sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
             sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
-
