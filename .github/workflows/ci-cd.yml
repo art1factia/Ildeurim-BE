@@ -46,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-jar            # ⬅ 이 이름을 deploy에서도 동일하게 사용
+          name: app-jar            # 이 이름을 deploy에서도 동일하게 사용
           path: ${{ steps.artifact.outputs.jar }}
           if-no-files-found: error
 
@@ -58,7 +58,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: app-jar          # ⬅ build와 동일한 이름
+          name: app-jar          # build와 동일한 이름
           path: .                # 현재 워크스페이스로 다운로드
 
       - name: Show workspace after download (debug)
