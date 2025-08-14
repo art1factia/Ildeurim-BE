@@ -135,7 +135,9 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "deploy/*"
+          source: |
+            deploy/app.jar
+            deploy/application-prod.yml
           target: ${{ secrets.SERVER_APP_DIR }}
           strip_components: 1
           overwrite: true
