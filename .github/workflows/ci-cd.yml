@@ -24,6 +24,24 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      # (A) 소스의 index.html 내용 확인 (정말 커밋이 들어왔는지)
+      - name: Show source index.html (repo)
+        run: |
+          echo "=== src/main/resources/static/index.html (repo) ==="
+          sed -n '1,40p' src/main/resources/static/index.html || true
+
+      # (B) Gradle이 복사해 둔 빌드 리소스 확인
+      - name: Show processed resource (build output)
+        run: |
+          echo "=== build/resources/main/static/index.html ==="
+          sed -n '1,40p' build/resources/main/static/index.html || true
+
+      # (C) JAR 안에 들어간 최종 파일 확인
+      - name: Show index.html inside jar
+        run: |
+          JAR_PATH=$(ls -1 build/libs/*.jar | head -n1)
+          echo "Using JAR: $JAR_PATH"
+          unzip -p "$JAR_PATH" BOOT-INF/classes/static/index.html | sed -n '1,40p'
 
       - name: Build (Gradle)
         run: |
@@ -98,6 +116,9 @@ jobs:
             [ -s "$f" ] || (echo "Missing or empty: $f" && exit 1)
             echo "OK: $f"
           done
+      # scp 전: 러너의 JAR 해시
+      - name: Hash of jar (runner)
+        run: sha256sum deploy/app.jar || sha1sum deploy/app.jar
 
       # 7) 파일 전송 — 상대 경로, 와일드카드로 간단하게
       - name: Copy to server
@@ -111,6 +132,16 @@ jobs:
           strip_components: 1
           overwrite: true
           debug: true
+      # scp 후: 서버의 JAR 해시
+      - name: Hash of jar (server)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sha256sum ${{ secrets.SERVER_APP_DIR }}/app.jar || sha1sum ${{ secrets.SERVER_APP_DIR }}/app.jar
+            ls -al ${{ secrets.SERVER_APP_DIR }}/app.jar
 
 
         # 8) 서비스 재시작 및 상태 확인
