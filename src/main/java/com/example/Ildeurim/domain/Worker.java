@@ -1,6 +1,9 @@
 package com.example.Ildeurim.domain;
 
-import com.example.Ildeurim.commons.enums.*;
+import com.example.Ildeurim.commons.domains.BaseEntity;
+import com.example.Ildeurim.commons.enums.jobpost.JobField;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
+import com.example.Ildeurim.commons.enums.worker.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -18,8 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-public class Worker {
-
+public class Worker extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
@@ -57,17 +59,12 @@ public class Worker {
     @Column(nullable = false)
     private String RLG; //지금은 서율로 고정
 
-    @Enumerated(EnumType.STRING)
-    @ElementCollection
-    @Column(nullable = false)
-    private List<WorkPlace> BLG; // 희망 근무 지역 (태그 느낌)
-
     // 희망 근무 지역 (BLG) - 여러 개 선택 가능
     @ElementCollection(targetClass = WorkPlace.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(
-            name = "worker_blgs",
-            joinColumns = @JoinColumn(name = "worker_id")
+            name = "workerBlgs",
+            joinColumns = @JoinColumn(name = "workerId")
     )
     @Column(name = "blg", nullable = false)
     private List<WorkPlace> BLG = new ArrayList<>();
@@ -76,10 +73,10 @@ public class Worker {
     @ElementCollection(targetClass = JobField.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(
-            name = "worker_job_interests",
-            joinColumns = @JoinColumn(name = "worker_id")
+            name = "workerJobInterests",
+            joinColumns = @JoinColumn(name = "workerId")
     )
-    @Column(name = "job_field", nullable = false)
+    @Column(name = "jobField", nullable = false)
     private List<JobField> jobInterest = new ArrayList<>();
 
 }

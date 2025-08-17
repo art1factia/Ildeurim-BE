@@ -1,6 +1,6 @@
 package com.example.Ildeurim.domain;
 import com.example.Ildeurim.commons.domains.BaseEntity;
-import com.example.Ildeurim.commons.enums.Hashtag;
+import com.example.Ildeurim.commons.enums.review.Hashtag;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;

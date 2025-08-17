@@ -1,4 +1,4 @@
-package com.example.Ildeurim.commons.enums;
+package com.example.Ildeurim.commons.enums.jobpost;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

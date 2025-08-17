@@ -1,6 +1,6 @@
-package com.example.Ildeurim.dto.response;
+package com.example.Ildeurim.dto.jobpost;
 
-import com.example.Ildeurim.commons.enums.JobPostStatus;
+import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
 import com.example.Ildeurim.domain.JobPost;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

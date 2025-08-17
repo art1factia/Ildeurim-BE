@@ -1,4 +1,4 @@
-package com.example.Ildeurim.commons.enums;
+package com.example.Ildeurim.commons.enums.jobpost;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -15,7 +15,8 @@ public enum JobField {
     SALES("판매"),
     FOOD_SERVICE("음식,서비스"),
     CULTURE_RESEARCH("문화, 연구"),
-    OFFICE_FINANCE("사무, 금융");
+    OFFICE_FINANCE("사무, 금융"),
+    OTHER("기타");
 
     private final String label;
 
