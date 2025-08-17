@@ -1,18 +1,85 @@
 package com.example.Ildeurim.domain;
 
-import com.example.Ildeurim.commons.domains.BaseEntity;
+import com.example.Ildeurim.commons.enums.*;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-@Entity
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Worker extends BaseEntity {
-    @Id // id 필드를 기본키(Primary Key)로 지정
+@Builder
+@Entity
+public class Worker {
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(updatable = false)
-    private Long id;
+    @Column(updatable = false, nullable = false)
+    private Long id;  // 고용인 ID (PK)
+
+    @Column
+    private String profileImgURL; // 프로필 이미지 URL
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt; // 생성일
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt; // 수정일
+
+    @Column(nullable = false)
+    @NotBlank
+    private String name; // 이름
+
+    @Column(nullable = false)
+    @NotBlank
+    private String phoneNumber; // 연락처
+
+    @Column(nullable = false)
+    @NotBlank
+    private LocalDate birthday;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender; // 성별
+
+    @Column(nullable = false)
+    @NotBlank
+    private String residence; // 거주 지역
+
+    @Column(nullable = false)
+    private String RLG; //지금은 서율로 고정
+
+    @Enumerated(EnumType.STRING)
+    @ElementCollection
+    @Column(nullable = false)
+    private List<WorkPlace> BLG; // 희망 근무 지역 (태그 느낌)
+
+    // 희망 근무 지역 (BLG) - 여러 개 선택 가능
+    @ElementCollection(targetClass = WorkPlace.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "worker_blgs",
+            joinColumns = @JoinColumn(name = "worker_id")
+    )
+    @Column(name = "blg", nullable = false)
+    private List<WorkPlace> BLG = new ArrayList<>();
+
+    // 구직 분야 (jobInterest) - 여러 개 선택 가능
+    @ElementCollection(targetClass = JobField.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "worker_job_interests",
+            joinColumns = @JoinColumn(name = "worker_id")
+    )
+    @Column(name = "job_field", nullable = false)
+    private List<JobField> jobInterest = new ArrayList<>();
+
 }

@@ -1,18 +1,72 @@
 package com.example.Ildeurim.domain;
 
 import com.example.Ildeurim.commons.domains.BaseEntity;
+import com.example.Ildeurim.commons.enums.JobField;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA 안전하게 생성자 보호
 @AllArgsConstructor
 public class Employer extends BaseEntity {
-    @Id // id 필드를 기본키(Primary Key)로 지정
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false)
     private Long id;
+
+    @Column(nullable = false)
+    @NotBlank
+    private String name;
+
+    @Column(nullable = false, unique = true)
+    @Email
+    private String email;
+
+    @Column(nullable = false)
+    @NotBlank
+    private String bossName;
+
+    @Column(nullable = false,unique = true)
+    @Pattern(
+            regexp = "^(01[016789]-\\d{3,4}-\\d{4}|02-\\d{3,4}-\\d{4}|0[3-9]{1}-\\d{3,4}-\\d{4})$",
+            message = "전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678, 02-123-4567"
+    )
+    private String phoneNumber;
+
+    @Column(nullable = false)
+    @NotBlank
+    private String companyName;
+
+    @Column(nullable = false)
+    @NotBlank
+    private String companyLocation;
+
+    @Column(nullable = false, unique = true)
+    @Pattern(
+            regexp = "^\\d{3}-\\d{2}-\\d{5}$",
+            message = "사업자번호 형식이 올바르지 않습니다. 예: 123-45-67890"
+    )
+    private String companyNumber;
+
+    @ElementCollection(targetClass = JobField.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(
+            name = "employer_jobField",
+            joinColumns = @JoinColumn(name = "employer_id")
+    ) //구직 분야 여러개 선택 가능
+    @Column(name = "jonField")
+    private List<JobField> jobFields = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JobPost> jobPosts = new ArrayList<>();
 }

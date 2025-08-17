@@ -9,6 +9,8 @@ import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 public class Application {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,29 +27,39 @@ public class Application {
     private LocalDateTime createdAt;        // 지원서 생성일
 
     @Column(nullable = false)
-    private LocalDateTime registrationTime; // 지원서 제출 시간
+    private LocalDateTime submissionTime;   // 지원서 제출 시간
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ApplicationStatus status;       // ACCEPTED / REJECTED / PENDING
+    private ApplicationStatus applicationStatus; // DRAFT / NEED_INTERVIEW / PENDING / ACCEPTED / REJECTED / HIRED
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplyMethod applyMethod;        // QUICK / PHONE
 
-    private String memo;                     // 고용주 메모
+    @ElementCollection
+    @CollectionTable(
+            name = "application_answers",
+            joinColumns = @JoinColumn(name = "application_id")
+    )
+    private List<Answer> answers = new ArrayList<>(); // 질문-답변 리스트
 
-    @Column(columnDefinition = "json")
-    private String answersForQuickApplication; // 간편지원 시 답변 JSON 형태
+    @Column(nullable = false)
+    private Boolean isCareerIncluding=false;     // 이력서 포함 여부
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "jobPostId", nullable = false)
-    private JobPost jobPost;                 // 어떤 모집 공고에 대한 지원서인지
+    private JobPost jobPost;                // 어떤 모집 공고에 대한 지원서인지
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workerId", nullable = false)
-    private Worker worker;                   // 지원자 정보
+    private Worker worker;                  // 지원자 정보
 
-
-
+    @Embeddable
+    @Getter
+    @Setter
+    public static class Answer {
+        private String question;
+        private String answer;
+    }
 }

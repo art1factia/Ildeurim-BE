@@ -1,4 +1,4 @@
 package com.example.Ildeurim.repository;
 
-public class ReviewRepository {
+public interface ReviewRepository {
 }

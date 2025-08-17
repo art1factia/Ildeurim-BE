@@ -5,9 +5,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ApplicationStatus {
 
+        DRAFT("임시저장"),
+        NEEDINTERVIEW("면접 전"),
+        PENDING("보류"),
         ACCEPTED("승인"),
         REJECTED("거부"),
-        PENDING("보류");
+        HIRED("고용");
 
     private final String label;
 
