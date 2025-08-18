@@ -55,6 +55,10 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
     private Integer workNumber;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CareerRequirement careerRequirement;
+
     @ElementCollection
     @CollectionTable(
             name = "jobpostApplyMethods",

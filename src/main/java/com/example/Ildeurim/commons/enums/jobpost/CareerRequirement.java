@@ -5,11 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CareerRequirement {
     NONE("무관"),
-    ENTRY("신입 가능"),
-    ONE_YEAR("1년 이상"),
-    TWO_YEARS("2년 이상"),
-    THREE_YEARS("3년 이상"),
-    FIVE_YEARS("5년 이상");
+    HAVING("있음");
 
     private final String label;
 
