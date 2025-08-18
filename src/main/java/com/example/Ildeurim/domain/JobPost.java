@@ -38,6 +38,23 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private String location;               // 근무 위치
 
+    @Column(nullable = false)
+    private Integer restime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WorkType workType;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "jobpostWorkDays",
+            joinColumns = @JoinColumn(name = "jobpostId")
+    )
+    @Enumerated(EnumType.STRING)
+    private List<WorkDays> workDays;
+
+    private Integer workNumber;
+
     @ElementCollection
     @CollectionTable(
             name = "jobpostApplyMethods",
