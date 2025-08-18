@@ -1,6 +1,6 @@
-package com.example.Ildeurim.dto.response;
+package com.example.Ildeurim.dto.jobpost;
 
-import com.example.Ildeurim.commons.enums.*;
+import com.example.Ildeurim.commons.enums.jobpost.*;
 import com.example.Ildeurim.domain.JobPost;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +27,9 @@ public class PostDetailResponse {
     private String content;                  // 상세 내용
     private LocalTime workStartTime; //근무 시작 시간
     private LocalTime workEndTime; // 근무 마감 시간
+    private WorkType workType;
+    private List<WorkDays> workDays;
+    private Integer workDaysCount;
     private JobPostStatus status;          // OPEN / CLOSED
     private CareerRequirement careerRequirement; //경력
     private EducationRequirement educationRequirement; // 학력
@@ -35,7 +38,6 @@ public class PostDetailResponse {
     private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
     private LocalDateTime expiryDate;      // 마감일
-
 
     private String employerName;
     private String employerPhone;
@@ -60,7 +62,7 @@ public class PostDetailResponse {
                 .applyMethods(jobPost.getApplyMethods())
                 .expiryDate(jobPost.getExpiryDate())
                 .employerName(jobPost.getEmployer().getName())
-                .employerPhone(jobPost.getEmployer().getPhone())
+                .employerPhone(jobPost.getEmployer().getPhoneNumber())
                 .build();
     }
 }

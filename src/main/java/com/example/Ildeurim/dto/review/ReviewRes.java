@@ -1,6 +1,6 @@
 package com.example.Ildeurim.dto.review;
 
-import com.example.Ildeurim.commons.enums.Hashtag;
+import com.example.Ildeurim.commons.enums.review.Hashtag;
 import com.example.Ildeurim.domain.Review;
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;

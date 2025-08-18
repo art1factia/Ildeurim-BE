@@ -1,8 +1,8 @@
-package com.example.Ildeurim.service;
+package com.example.Ildeurim.service.jobpost;
 
 import com.example.Ildeurim.domain.JobPost;
-import com.example.Ildeurim.dto.response.PostDetailResponse;
-import com.example.Ildeurim.dto.response.SimplePostResponse;
+import com.example.Ildeurim.dto.jobpost.PostDetailResponse;
+import com.example.Ildeurim.dto.jobpost.SimplePostResponse;
 import com.example.Ildeurim.repository.JobPostRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

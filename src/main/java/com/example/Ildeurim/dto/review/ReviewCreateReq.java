@@ -1,6 +1,6 @@
 package com.example.Ildeurim.dto.review;
 
-import com.example.Ildeurim.commons.enums.Hashtag;
+import com.example.Ildeurim.commons.enums.review.Hashtag;
 import jakarta.validation.constraints.*;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.hibernate.validator.constraints.UniqueElements;

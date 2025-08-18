@@ -1,6 +1,6 @@
 package com.example.Ildeurim.dto.review;
 
-import com.example.Ildeurim.commons.enums.Hashtag;
+import com.example.Ildeurim.commons.enums.review.Hashtag;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
 import lombok.Builder;

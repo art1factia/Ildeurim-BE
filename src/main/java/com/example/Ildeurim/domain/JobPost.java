@@ -1,37 +1,31 @@
 package com.example.Ildeurim.domain;
 
-import com.example.Ildeurim.commons.enums.*;
+import com.example.Ildeurim.commons.domains.BaseEntity;
+import com.example.Ildeurim.commons.enums.jobpost.*;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-@EntityListeners(AuditingEntityListener.class)
-//엔티티의 생성 및 수정 시간을 자동으로 감시하고 기록하기 위해 애너테이션 추가
 @Getter
-@Entity
+@Setter
 @NoArgsConstructor
-public class JobPost {
+@Entity
+public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
     private Long id;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;       // 생성일
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;       // 수정일
-
     @Column(nullable = false)
     private String title;                  // 모집 제목
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT",length = 500)
     private String content;                // 상세 내용
 
     @Enumerated(EnumType.STRING)
@@ -45,47 +39,73 @@ public class JobPost {
     private String location;               // 근무 위치
 
     @Column(nullable = false)
-    private String info;                   // 추가 정보 (근무복, 식사 등)
+    private Integer restime;
 
     @Enumerated(EnumType.STRING)
-    @ElementCollection(targetClass = ApplyMethod.class)
-    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+    @Column(nullable = false)
+    private WorkType workType;
 
     @ElementCollection
+    @CollectionTable(
+            name = "jobpostWorkDays",
+            joinColumns = @JoinColumn(name = "jobpostId")
+    )
+    @Enumerated(EnumType.STRING)
+    private List<WorkDays> workDays;
+
+    private Integer workNumber;
+
     @Column(nullable = false)
-    private List<String> questionList;      // 지원 시 질문 목록
+    @Enumerated(EnumType.STRING)
+    private CareerRequirement careerRequirement;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "jobpostApplyMethods",
+            joinColumns = @JoinColumn(name = "jobpostId")
+    )
+    @Enumerated(EnumType.STRING)
+    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+
+//    @ElementCollection
+//    @CollectionTable(
+//            name = "jobpost_questions",
+//            joinColumns = @JoinColumn(name = "jobpost_id")
+//    )
+//    @Column(name = "question", nullable = false)
+//    private List<String> questionList;      // 지원 시 질문 목록
+
+    @Column(nullable = false)
+    private LocalDateTime startDate;       // 모집 시작일
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;      // 마감일
 
-    @Enumerated(EnumType.STRING) //Enum 이름 그대로 문자열로 저장
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private JobPostStatus status;          // OPEN / CLOSED
 
     @Column(nullable = false)
-    private LocalTime workStartTime; //근무 시작 시간
+    private LocalTime workStartTime;       // 근무 시작 시간
 
     @Column(nullable = false)
-    private LocalTime workEndTime; // 근무 마감 시간
+    private LocalTime workEndTime;         // 근무 종료 시간
+
+    @Column(nullable = false)
+    private Boolean haveCareer= false; // 경력 요구사항
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CareerRequirement careerRequirement; //경력
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EducationRequirement educationRequirement; // 학력
+    private EducationRequirement educationRequirement; // 학력 요구사항
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmploymentType employmentType; // 고용 형태
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employerId", nullable = false) //employer_id 컬럼 값은 연결된 Employer 엔티티의 id 값과 같아야함
-    private Employer employer;           // 고용주 정보
+    @JoinColumn(name = "employerId", nullable = false)
+    private Employer employer;             // 고용주 정보
 
-    @OneToMany(mappedBy = "jobPost",fetch = FetchType.LAZY, cascade = CascadeType.ALL) //jobpost저장시(삭제시) application도 저장(삭제)
+    @OneToMany(mappedBy = "jobPost", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications; // 지원자 리스트
-
-
 }

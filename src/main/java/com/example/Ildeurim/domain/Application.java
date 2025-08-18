@@ -1,7 +1,8 @@
 package com.example.Ildeurim.domain;
 
-import com.example.Ildeurim.commons.enums.ApplicationStatus;
-import com.example.Ildeurim.commons.enums.ApplyMethod;
+import com.example.Ildeurim.commons.domains.BaseEntity;
+import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
+import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,15 +10,13 @@ import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-public class Application {
+public class Application extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,12 +36,12 @@ public class Application {
     @Column(nullable = false)
     private ApplyMethod applyMethod;        // QUICK / PHONE
 
-    @ElementCollection
-    @CollectionTable(
-            name = "application_answers",
-            joinColumns = @JoinColumn(name = "application_id")
-    )
-    private List<Answer> answers = new ArrayList<>(); // 질문-답변 리스트
+//    @ElementCollection
+//    @CollectionTable(
+//            name = "applicationAnswers",
+//            joinColumns = @JoinColumn(name = "applicationId")
+//    )
+//    private List<Answer> answers = new ArrayList<>(); // 질문-답변 리스트
 
     @Column(nullable = false)
     private Boolean isCareerIncluding=false;     // 이력서 포함 여부
@@ -53,13 +52,16 @@ public class Application {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workerId", nullable = false)
-    private Worker worker;                  // 지원자 정보
+    private Worker worker; // 지원자 정보
 
-    @Embeddable
-    @Getter
-    @Setter
-    public static class Answer {
-        private String question;
-        private String answer;
-    }
+    @OneToOne(mappedBy = "job", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Application application;
+
+//    @Embeddable
+//    @Getter
+//    @Setter
+//    public static class Answer {
+//        private String question;
+//        private String answer;
+//    }
 }

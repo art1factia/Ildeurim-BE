@@ -1,7 +1,7 @@
 package com.example.Ildeurim.domain;
 
 import com.example.Ildeurim.commons.domains.BaseEntity;
-import com.example.Ildeurim.commons.enums.JobField;
+import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -61,10 +61,10 @@ public class Employer extends BaseEntity {
     @ElementCollection(targetClass = JobField.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(
-            name = "employer_jobField",
-            joinColumns = @JoinColumn(name = "employer_id")
+            name = "employerJobField",
+            joinColumns = @JoinColumn(name = "employerId")
     ) //구직 분야 여러개 선택 가능
-    @Column(name = "jonField")
+    @Column(name = "jobField")
     private List<JobField> jobFields = new ArrayList<>();
 
     @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
