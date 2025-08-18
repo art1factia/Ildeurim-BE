@@ -38,4 +38,6 @@ public class Job extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "jobId", nullable = false)
     private Job job;
+
+    //d
 }
