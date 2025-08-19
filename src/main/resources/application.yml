@@ -4,3 +4,11 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  secret: aaa
+  expMin: 60
+twilio:
+  account-sid: AC97a71daa1aef6c84827925a485110e15
+  verify-service-sid: VA04a90416fc1dcb7292cd76083c5083dd
+  auth-token: 372956d9c40e609e3301b6993636d0c6

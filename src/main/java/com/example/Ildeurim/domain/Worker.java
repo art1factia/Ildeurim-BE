@@ -30,12 +30,6 @@ public class Worker extends BaseEntity {
     @Column
     private String profileImgURL; // 프로필 이미지 URL
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt; // 생성일
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt; // 수정일
-
     @Column(nullable = false)
     @NotBlank
     private String name; // 이름
