@@ -3,17 +3,18 @@ package com.example.Ildeurim.domain;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
@@ -45,15 +46,19 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private WorkType workType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private JobField jobField;
+
     @ElementCollection
     @CollectionTable(
-            name = "jobPostWorkDays", //오타 수정(jobpostWorkDays -> jobPostWorkDays)
-            joinColumns = @JoinColumn(name = "jobPostId") //오타수정((jobpostId -> jobPostId)
+            name = "jobPostWorkDays",
+            joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
     private List<WorkDays> workDays;
 
-    private Integer workNumber;
+    private Integer workDaysCount;
 
     @Column(nullable = false)
     private Boolean careerRequirement; //type이 boolean이라 enum 없이 사용하도록 변경
@@ -77,7 +82,6 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
 
-    @Column(nullable = false)
     private LocalDateTime expiryDate;      // 마감일
 
     @Enumerated(EnumType.STRING)
@@ -100,6 +104,13 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmploymentType employmentType; // 고용 형태
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private List<ApplyMethod> applyMethod;
+
+    @Column(nullable = false)
+    private Boolean isJobPostUsing=false;  //모집 공고를 계속 이용할건지
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employerId", nullable = false)
