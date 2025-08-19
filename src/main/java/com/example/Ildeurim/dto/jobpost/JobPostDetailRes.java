@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor
-public class PostDetailResponse {
+public class JobPostDetailRes {
     private Long jobPostId;
     private LocalDateTime createdAt;       // 생성일
     private LocalDateTime updatedAt;       // 수정일
@@ -31,7 +31,7 @@ public class PostDetailResponse {
     private List<WorkDays> workDays;
     private Integer workDaysCount;
     private JobPostStatus status;          // OPEN / CLOSED
-    private CareerRequirement careerRequirement; //경력
+    private Boolean careerRequirement; //경력
     private EducationRequirement educationRequirement; // 학력
     private EmploymentType employmentType;
 
@@ -43,8 +43,8 @@ public class PostDetailResponse {
     private String employerPhone;
 
 
-    public static PostDetailResponse of(JobPost jobPost) {
-        return PostDetailResponse.builder()
+    public static JobPostDetailRes of(JobPost jobPost) {
+        return JobPostDetailRes.builder()
                 .jobPostId(jobPost.getId())
                 .createdAt(jobPost.getCreatedAt())
                 .updatedAt(jobPost.getUpdatedAt())

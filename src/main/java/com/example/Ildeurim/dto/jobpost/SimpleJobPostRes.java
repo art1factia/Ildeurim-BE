@@ -2,7 +2,6 @@ package com.example.Ildeurim.dto.jobpost;
 
 import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
-import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.JobPost;
 import lombok.AllArgsConstructor;
@@ -15,7 +14,7 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor
-public class SimplePostResponse {
+public class SimpleJobPostRes {
     private Long jobPostId;                       // 공고 ID (상세페이지 들어갈 때 필요)
     private String companyName;           // 구인 업체명
     private String title;                  // 구인 공고명
@@ -25,8 +24,8 @@ public class SimplePostResponse {
     private LocalDateTime expiryDate;      // 채용 마감 기한
     private List<JobField> jobFields;      // 구직 분야
 
-    public static SimplePostResponse of(JobPost jobPost)
-    { return SimplePostResponse.builder()
+    public static SimpleJobPostRes of(JobPost jobPost)
+    { return SimpleJobPostRes.builder()
             .jobPostId(jobPost.getId())
             .title(jobPost.getTitle())
             .companyName(jobPost.getEmployer().getCompanyName())

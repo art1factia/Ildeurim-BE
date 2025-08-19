@@ -39,7 +39,7 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     private String location;               // 근무 위치
 
     @Column(nullable = false)
-    private Integer restime;
+    private Integer restTime; //오타 수정 (restime -> restTime)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,8 +47,8 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
     @ElementCollection
     @CollectionTable(
-            name = "jobpostWorkDays",
-            joinColumns = @JoinColumn(name = "jobpostId")
+            name = "jobPostWorkDays", //오타 수정(jobpostWorkDays -> jobPostWorkDays)
+            joinColumns = @JoinColumn(name = "jobPostId") //오타수정((jobpostId -> jobPostId)
     )
     @Enumerated(EnumType.STRING)
     private List<WorkDays> workDays;
@@ -56,13 +56,12 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     private Integer workNumber;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private CareerRequirement careerRequirement;
+    private Boolean careerRequirement; //type이 boolean이라 enum 없이 사용하도록 변경
 
     @ElementCollection
     @CollectionTable(
-            name = "jobpostApplyMethods",
-            joinColumns = @JoinColumn(name = "jobpostId")
+            name = "jobPostApplyMethods",
+            joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
     private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)

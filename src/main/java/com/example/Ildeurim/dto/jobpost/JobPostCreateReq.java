@@ -1,4 +1,4 @@
 package com.example.Ildeurim.dto.jobpost;
 
-public class AddPostRequest {
+public class JobPostCreateReq {
 }
