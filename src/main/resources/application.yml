@@ -8,7 +8,4 @@ server:
 jwt:
   secret: aaa
   expMin: 60
-twilio:
-  account-sid: ${ ACCOUNT_SID }
-  verify-service-sid: ${ VERIFY_SERVICE_SID }
-  auth-token: ${ AUTH_TOKEN }
+
