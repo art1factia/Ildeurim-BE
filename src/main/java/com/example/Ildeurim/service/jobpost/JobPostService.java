@@ -24,12 +24,4 @@ public class JobPostService {
         return SimplePostResponseList;
     }
 
-    //공지글 단건 조회
-    public JobPostDetailRes getJobPost(long id) {
-        JobPost jobPost = jobPostRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 ID의 게시글을 찾을 수 없습니다. ID: " + id));
-
-
-    }
-
 }

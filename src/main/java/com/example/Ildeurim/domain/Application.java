@@ -24,9 +24,6 @@ public class Application extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;        // 지원서 생성일
-
     @Column(nullable = false)
     private LocalDateTime submissionTime;   // 지원서 제출 시간
 
@@ -49,10 +46,16 @@ public class Application extends BaseEntity {
     @JoinColumn(name = "workerId", nullable = false)
     private Worker worker; // 지원자 정보
 
-    @OneToOne(mappedBy = "job", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-    private Application application;
+//    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+//    private Job job;
+
+    @OneToOne
+    @JoinColumn(name = "jobId")
+    private Job job;
 
     @Convert(converter = AnswerListJsonConverter.class)
     @Column(columnDefinition = "jsonb")
     private AnswerList answers;
+
+
 }
