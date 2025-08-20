@@ -3,7 +3,9 @@ package com.example.Ildeurim.service;
 import com.example.Ildeurim.auth.CustomPrincipal;
 import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.domain.Worker;
+import com.example.Ildeurim.dto.employer.EmployerDetailRes;
 import com.example.Ildeurim.dto.worker.WorkerCreateReq;
+import com.example.Ildeurim.dto.worker.WorkerDetailRes;
 import com.example.Ildeurim.dto.worker.WorkerSignupRes;
 import com.example.Ildeurim.jwt.JwtUtil;
 import com.example.Ildeurim.repository.WorkerRepository;
@@ -44,5 +46,10 @@ public class WorkerService {
          long expEpochSec = jwtUtil.getExpiresAtEpochSeconds(accessToken);
 
         return new WorkerSignupRes(worker.getId(), accessToken, expEpochSec);
+    }
+
+    @Transactional
+    public WorkerDetailRes me(){
+        //TODO: jwt token -> worker user find 작성
     }
 }

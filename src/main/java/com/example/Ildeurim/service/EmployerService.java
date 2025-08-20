@@ -5,6 +5,7 @@ import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.domain.Employer;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.employer.EmployerCreateReq;
+import com.example.Ildeurim.dto.employer.EmployerDetailRes;
 import com.example.Ildeurim.dto.employer.EmployerSignupRes;
 import com.example.Ildeurim.dto.worker.WorkerCreateReq;
 import com.example.Ildeurim.dto.worker.WorkerSignupRes;
@@ -48,5 +49,11 @@ public class EmployerService {
 
         return new EmployerSignupRes(employer.getId(), accessToken, expEpochSec);
     }
+
+    @Transactional
+    public EmployerDetailRes me(){
+        //TODO: jwt token -> employer user find 작성
+    }
+
 
 }
