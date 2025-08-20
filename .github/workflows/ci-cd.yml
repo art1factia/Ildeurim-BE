@@ -1,0 +1,167 @@
+name: CI-CD (Gradle, JDK17)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: true
+
+env:
+  JDK_VERSION: '17'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Show repo layout (debug)
+        run: |
+          pwd
+          ls -al
+          echo "---- gradle files ----"
+          find . -maxdepth 3 -type f -name "build.gradle*" -o -name "settings.gradle*" -print
+          echo "---- gradle projects ----"
+          ./gradlew projects || true
+
+      - name: Build (Gradle)
+        run: |
+          chmod +x gradlew
+          # 테스트 실패에 막히지 않으려면 -x test 를 사용 (필요시 제거)
+          ./gradlew --no-daemon clean bootJar -x test
+
+      # (A) 소스 확인
+      - name: Show source index.html (repo)
+        run: |
+          echo "=== src/main/resources/static/index.html (repo) ==="
+          sed -n '1,40p' src/main/resources/static/index.html || true
+
+      # (B) 빌드 아웃풋 리소스 확인 (멀티모듈 대응)
+      - name: Show processed resource (build outputs)
+        run: |
+          echo "=== any */build/resources/main/static/index.html ==="
+          F=$(find . -path "*/build/resources/main/static/index.html" | head -n1)
+          if [ -n "$F" ]; then
+            echo "Found at: $F"
+            sed -n '1,40p' "$F"
+          else
+            echo "NO processed index.html found"
+          fi
+
+      # (C) JAR 내부 확인 (멀티모듈 대응)
+      - name: Show index.html inside jar
+        run: |
+          set -e
+          JAR=$(find . -path "*/build/libs/*.jar" -type f ! -name "*plain.jar" | head -n1)
+          if [ -z "$JAR" ]; then
+            echo "No jar found under */build/libs"; exit 1
+          fi
+          echo "Using JAR: $JAR"
+          unzip -p "$JAR" BOOT-INF/classes/static/index.html | sed -n '1,40p' || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: |
+            **/build/libs/*.jar
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) 빌드 아티팩트 다운로드 (build job에서 name: app-jar 로 업로드했던 것)
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: .
+
+      # 2) 워크스페이스 점검 (경로 문제 디버그용)
+      - name: Show workspace after download (debug)
+        run: |
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          ls -al
+          find . -maxdepth 3 -type f -name "*.jar" -print
+
+      # 3) JAR → deploy/app.jar
+      - name: Normalize jar into deploy folder
+        run: |
+          set -euo pipefail
+          JAR=$(find . -type f -name "*.jar" | head -n1)
+          [ -n "${JAR:-}" ] || (echo "No JAR found"; exit 1)
+          mkdir -p deploy
+          cp -f "$JAR" deploy/app.jar
+          ls -al deploy
+
+      # 4) YML → deploy/application-prod.yml  (← 경로 통일!!)
+      - name: Prepare application-prod.yml (placeholder)
+        run: |
+          mkdir -p deploy
+          cat > deploy/application-prod.yml << 'EOF'
+          # prod config placeholder
+          EOF
+          ls -al deploy
+
+      # 5) 존재 검증 (deploy 안만 검사)
+      - name: Verify files exist (fail fast)
+        run: |
+          set -euo pipefail
+          for f in deploy/app.jar deploy/application-prod.yml; do
+            [ -s "$f" ] || (echo "Missing or empty: $f" && exit 1)
+            echo "OK: $f"
+          done
+      # scp 전: 러너의 JAR 해시
+      - name: Hash of jar (runner)
+        run: sha256sum deploy/app.jar || sha1sum deploy/app.jar
+
+      # 7) 파일 전송 — 상대 경로, 와일드카드로 간단하게
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "deploy/app.jar,deploy/application-prod.yml"
+          target: ${{ secrets.SERVER_APP_DIR }}
+          strip_components: 1
+          overwrite: true
+          debug: true
+      # scp 후: 서버의 JAR 해시
+      - name: Hash of jar (server)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sha256sum ${{ secrets.SERVER_APP_DIR }}/app.jar || sha1sum ${{ secrets.SERVER_APP_DIR }}/app.jar
+            ls -al ${{ secrets.SERVER_APP_DIR }}/app.jar
+
+
+        # 8) 서비스 재시작 및 상태 확인
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          # port: 22
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_APP_DIR }}
+            sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
+            sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l
