@@ -35,8 +35,8 @@ public class Job extends BaseEntity {
     @Column(columnDefinition = "json", nullable = true)
     private String contractCore; // 계약서 요약 JSON
 
-    @OneToOne(mappedBy = "job")
+    @OneToOne
+    @JoinColumn(name = "applicationId", nullable = false)
     private Application application;
-
 
 }
