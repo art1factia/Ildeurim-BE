@@ -1,13 +1,17 @@
 package com.example.Ildeurim.dto.review;
 
+import com.example.Ildeurim.commons.enums.review.EvaluationAnswer;
+import com.example.Ildeurim.commons.enums.review.EvaluationType;
 import com.example.Ildeurim.commons.enums.review.Hashtag;
 import com.example.Ildeurim.domain.Review;
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -17,33 +21,20 @@ import java.util.List;
 public class ReviewRes {
 
     private Long id;
+    private Long employerId;
+    private Map<EvaluationType, EvaluationAnswer> answers;
+    private List<Hashtag> hashtags;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    // 리뷰 대상 employerId
-    private Long targetId;
-
-    // 본문
-    private Integer rating;        // 1~5
-    private String content;
-    private List<Hashtag> hashtags; // @JsonValue 설정되어 있다면 라벨로 직렬화됨
-
-    // 작성자/감사 정보(필요하면 노출)
-    private Long workerId;         // 로그인한 작성자 id
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
-
-    /**
-     * 엔티티 → DTO 변환 헬퍼 (편의용)
-     */
-    public static ReviewRes from(Review review) {
+    public static ReviewRes of(Review review) {
         return ReviewRes.builder()
                 .id(review.getId())
-                .targetId(review.getEmployer().getId())
-                .rating(review.getRating())
-                .content(review.getContent())
+                .employerId(review.getEmployer().getId())
+                .answers(review.getAnswers())
                 .hashtags(review.getHashtags())
-                .workerId(review.getWorker().getId())
-                .createdAt(review.getCreatedAt() == null ? null : review.getCreatedAt().atOffset(ZoneOffset.UTC))
-                .updatedAt(review.getUpdatedAt() == null ? null : review.getUpdatedAt().atOffset(ZoneOffset.UTC))
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
                 .build();
     }
 }

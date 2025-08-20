@@ -1,7 +1,9 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.commons.converter.QuestionListJsonConverter;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
+public class JobPost extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,14 +73,6 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Enumerated(EnumType.STRING)
     private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
-//    @ElementCollection
-//    @CollectionTable(
-//            name = "jobpost_questions",
-//            joinColumns = @JoinColumn(name = "jobpost_id")
-//    )
-//    @Column(name = "question", nullable = false)
-//    private List<String> questionList;      // 지원 시 질문 목록
-
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
 
@@ -118,4 +112,8 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
     @OneToMany(mappedBy = "jobPost", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Application> applications; // 지원자 리스트
+
+    @Convert(converter = QuestionListJsonConverter.class)
+    @Column(columnDefinition = "jsonb")
+    private QuestionList questionList;
 }

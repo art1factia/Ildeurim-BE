@@ -1,8 +1,10 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.commons.converter.AnswerListJsonConverter;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
 import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
+import com.example.Ildeurim.domain.quickAnswer.AnswerList;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,9 +24,6 @@ public class Application extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;        // 지원서 생성일
-
     @Column(nullable = false)
     private LocalDateTime submissionTime;   // 지원서 제출 시간
 
@@ -35,13 +34,6 @@ public class Application extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplyMethod applyMethod;        // QUICK / PHONE
-
-//    @ElementCollection
-//    @CollectionTable(
-//            name = "applicationAnswers",
-//            joinColumns = @JoinColumn(name = "applicationId")
-//    )
-//    private List<Answer> answers = new ArrayList<>(); // 질문-답변 리스트
 
     @Column(nullable = false)
     private Boolean isCareerIncluding=false;     // 이력서 포함 여부
@@ -54,18 +46,12 @@ public class Application extends BaseEntity {
     @JoinColumn(name = "workerId", nullable = false)
     private Worker worker; // 지원자 정보
 
-
     @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
     private Job job;
 
-//    @OneToOne(mappedBy = "job", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-//    private Application application;
+    @Convert(converter = AnswerListJsonConverter.class)
+    @Column(columnDefinition = "jsonb")
+    private AnswerList answers;
 
-//    @Embeddable
-//    @Getter
-//    @Setter
-//    public static class Answer {
-//        private String question;
-//        private String answer;
-//    }
+
 }
