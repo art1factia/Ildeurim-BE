@@ -4,6 +4,8 @@ import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -35,9 +37,18 @@ public class Job extends BaseEntity {
     @Column(columnDefinition = "json", nullable = true)
     private String contractCore; // 계약서 요약 JSON
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "jobId", nullable = false)
-    private Job job;
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "jobId", nullable = false)
+//    private Job job;
 
-    //d
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="workerId", nullable = false)
+    @OnDelete(action= OnDeleteAction.CASCADE)
+    private Worker worker;
+
+    @OneToOne
+    @JoinColumn(name = "applicationId", referencedColumnName = "id")
+    private Application application;
+
+
 }

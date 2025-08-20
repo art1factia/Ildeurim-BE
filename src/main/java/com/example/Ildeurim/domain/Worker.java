@@ -73,4 +73,16 @@ public class Worker extends BaseEntity {
     @Column(name = "jobField", nullable = false)
     private List<JobField> jobInterest = new ArrayList<>();
 
+    @OneToMany(mappedBy = "worker")
+    private List<Application> applications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "worker")
+    private List<Review> reviews = new ArrayList<>();
+
+    @OneToMany(mappedBy = "worker")
+    private List<Job> jobs = new ArrayList<>();
+
+    @OneToMany(mappedBy = "worker")
+    private List<Career> careers = new ArrayList<>();
+
 }

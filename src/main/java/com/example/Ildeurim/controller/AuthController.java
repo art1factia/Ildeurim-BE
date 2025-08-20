@@ -1,10 +1,14 @@
 package com.example.Ildeurim.controller;
 
+import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.dto.ApiResponse;
 import com.example.Ildeurim.dto.OTP.JwtRes;
 import com.example.Ildeurim.dto.OTP.OtpSendReq;
 import com.example.Ildeurim.dto.OTP.OtpVerifyReq;
+import com.example.Ildeurim.dto.OTP.SignupJwtRes;
 import com.example.Ildeurim.jwt.JwtUtil;
+import com.example.Ildeurim.repository.EmployerRepository;
+import com.example.Ildeurim.repository.WorkerRepository;
 import com.example.Ildeurim.service.EmployerService;
 import com.example.Ildeurim.service.SmsService;
 import com.example.Ildeurim.service.WorkerService;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -29,6 +34,8 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final WorkerService workerService;
     private final EmployerService employerService;
+    private final WorkerRepository workerRepository;
+    private final EmployerRepository employerRepository;
 
 
     @PostMapping("/send-code")
@@ -39,23 +46,27 @@ public class AuthController {
     }
 
     @PostMapping("/verify-code")
-    public ResponseEntity<?> verifyCode(@RequestBody OtpVerifyReq req) {
-        String phone = req.phone();
-        String code = req.code();
+    public ResponseEntity<ApiResponse<?>> verifyCode(@Valid @RequestBody OtpVerifyReq req) {
 
+        boolean exists = (req.userType() == UserType.WORKER)
+                ? workerRepository.existsByPhoneNumber(req.phone())
+                : employerRepository.existsByPhoneNumber(req.phone());
 
-        Long userId = switch (req.userType()) {
-            case WORKER -> workerService.ensureByPhone(req.phone());    // 없으면 생성 후 id 리턴
-            case EMPLOYER -> employerService.ensureByPhone(req.phone()); // 동일
-        };
-
-        if (smsService.verifyCode(phone, code)) {
-            String token = jwtUtil.generateToken(userId, req.userType(), req.phone());
+        if (exists) {
+            Optional<Long> userIdOpt = (req.userType() == UserType.WORKER)
+                    ? workerRepository.findIdByPhoneNumber(req.phone())
+                    : employerRepository.findIdByPhoneNumber(req.phone());
+            String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 60);
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new JwtRes(token))
+                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, true))
             );
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid code");
+            String signup = jwtUtil.generateSignupToken(req.userType(), req.phone(), 15);
+            // 프론트는 이 토큰으로 /signup/{type} 화면에서 제출
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, false))
+            );
         }
     }
+
 }

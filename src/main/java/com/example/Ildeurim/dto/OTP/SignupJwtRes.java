@@ -1,8 +1,7 @@
 package com.example.Ildeurim.dto.OTP;
 
-import com.example.Ildeurim.commons.enums.UserType;
-
-public record JwtRes(
+public record SignupJwtRes (
         String accessToken,
         boolean isNewbie
-) {}
+){
+}

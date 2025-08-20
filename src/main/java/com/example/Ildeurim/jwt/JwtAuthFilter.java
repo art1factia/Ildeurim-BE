@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -49,35 +50,52 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (auth != null && auth.startsWith("Bearer ")) {
             String token = auth.substring(7);
             try {
-                Jws<Claims> jws = jwtUtil.parse(token);
-                Long userId = jwtUtil.getUserId(jws);
-                UserType userType = jwtUtil.getUserType(jws);
-                String phone = jwtUtil.getPhone(jws);
+                var jws   = jwtUtil.parse(token);
+                var scope = jwtUtil.getScope(jws); // "access" | "signup" (기타 값은 무시)
 
-                // 레포지토리에서 존재 확인
-                boolean exists = switch (userType) {
-                    case WORKER   -> workerRepository.existsById(userId);
-                    case EMPLOYER -> employerRepository.existsById(userId);
-                };
-                if (!exists) {
-                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account not found or inactive");
-                    return;
+                if ("access".equals(scope)) {
+                    Long userId        = jwtUtil.getUserId(jws);
+                    var userType       = jwtUtil.getUserType(jws);
+                    String phone       = jwtUtil.getPhone(jws);
+
+                    // 존재 확인 (isActive 없으면 existsById로 충분)
+                    boolean exists = switch (userType) {
+                        case WORKER   -> workerRepository.existsById(userId);
+                        case EMPLOYER -> employerRepository.existsById(userId);
+                    };
+                    if (!exists) {
+                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account not found");
+                        return;
+                    }
+
+                    // ROLE_* 부여
+                    var principal   = new CustomPrincipal(userId, userType, phone);
+                    var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + userType.name()));
+                    seJtAuth(principal, authorities, req);
+
+                } else if ("signup".equals(scope)) {
+                    // 가입 단계: ROLE 없이 가입 범위 권한만 부여
+                    var principal   = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws));
+                    var authorities = List.of(new SimpleGrantedAuthority("SCOPE_signup"));
+                    seJtAuth(principal, authorities, req);
                 }
-
-                var principal = new CustomPrincipal(userId, userType, phone);
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + userType.name()));
-                var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                // SecurityContext 세팅
-                org.springframework.security.core.context.SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-
+                // 그 외 scope는 인증 미설정(익명으로 통과)
             } catch (Exception e) {
+                // 토큰이 아예 잘못된 경우 즉시 401
                 res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
         }
 
         chain.doFilter(req, res);
+    }
+
+    private void seJtAuth(CustomPrincipal principal,
+                         List<? extends GrantedAuthority> authorities,
+                         HttpServletRequest req) {
+        var authentication =
+                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

@@ -32,19 +32,36 @@ public class JwtUtil {
         this.expMin = expMin;
     }
 
-    public String generateToken(Long userId, UserType userType, String phone) {
+    // Access 토큰: 정상 사용용
+    public String generateAccessToken(Long userId, UserType userType, String phone, long expMin) {
         Instant now = Instant.now();
-        Instant exp = now.plus(expMin, ChronoUnit.MINUTES);
-
         return Jwts.builder()
-                .subject(String.valueOf(userId))          // sub = userId
-                .claim("utype", userType.name())          // 사용자 종류
-                .claim("phone", phone)                    // 필요 시
+                .subject(String.valueOf(userId))
+                .claim("utype", userType.name())
+                .claim("phone", phone)
+                .claim("scope", "access")
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(exp))
+                .expiration(Date.from(now.plus(expMin, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .compact();
     }
+    // Signup 토큰: 회원가입 단계에서만 사용 (ROLE 부여 X)
+    public String generateSignupToken(UserType userType, String phone, long ttlMin) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject("0") // 아직 userId 없음
+                .claim("utype", userType.name())
+                .claim("phone", phone)
+                .claim("scope", "signup")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(ttlMin, ChronoUnit.MINUTES))) // 예: 15분
+                .signWith(key)
+                .compact();
+    }
+    public String getScope(Jws<Claims> jws) {
+        return jws.getPayload().get("scope", String.class);
+    }
+
 
     public Jws<Claims> parse(String token) {
         return Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token);
@@ -60,5 +77,12 @@ public class JwtUtil {
     }
     public String getPhone(Jws<Claims> jws) {
         return jws.getPayload().get("phone", String.class);
+    }
+
+    /** 만들어진 토큰의 exp 클레임을 그대로 읽어서 에포크초로 반환 */
+    public long getExpiresAtEpochSeconds(String jwt) {
+        var jws = Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(jwt);
+        Date exp = jws.getPayload().getExpiration();
+        return exp.toInstant().getEpochSecond();
     }
 }
