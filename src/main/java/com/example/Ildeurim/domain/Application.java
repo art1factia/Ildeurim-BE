@@ -60,4 +60,8 @@ public class Application extends BaseEntity {
         this.applicationStatus = ApplicationStatus.PENDING;
         this.submissionTime = LocalDateTime.now();
     }
+
+    public void updateStatus(ApplicationStatus newStatus) {
+        this.applicationStatus = newStatus;
+    }
 }

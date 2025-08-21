@@ -15,7 +15,6 @@ public class SimpleApplicationRes {
     private String companyName;
     private String title;
     private String location;
-    private JobField jobField;
     private String applicationStatus;
 
     public static SimpleApplicationRes of(Application application) {
@@ -25,7 +24,6 @@ public class SimpleApplicationRes {
                 .companyName(application.getJobPost().getEmployer().getCompanyName())
                 .title(application.getJobPost().getTitle())
                 .location(application.getJobPost().getLocation())
-                .jobField(application.getJobPost().getJobField())
                 .applicationStatus(application.getApplicationStatus().getLabel())
                 .build();
     }
