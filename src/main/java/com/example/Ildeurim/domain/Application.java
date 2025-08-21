@@ -53,5 +53,11 @@ public class Application extends BaseEntity {
     @Column(columnDefinition = "jsonb")
     private AnswerList answers;
 
-
+    public void submit() {
+        if (this.applicationStatus == ApplicationStatus.PENDING) {
+            throw new IllegalStateException("이미 제출된 지원서입니다.");
+        }
+        this.applicationStatus = ApplicationStatus.PENDING;
+        this.submissionTime = LocalDateTime.now();
+    }
 }
