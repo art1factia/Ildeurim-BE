@@ -15,7 +15,7 @@ import java.util.Set;
 public record WorkerUpdateCmd(
         Optional<String> name,
         Optional<String> phoneNumber,
-        Optional<LocalDate> birthday,   // 날짜 검증을 강화하려면 @Past 권장
+        Optional<LocalDate> birthday,
         Optional<Gender> gender,
         Optional<String> residence,
         Optional<String> RLG,

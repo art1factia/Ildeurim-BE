@@ -5,7 +5,7 @@ import com.example.Ildeurim.commons.enums.worker.Gender;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
 
 public record WorkerUpdateReq(
         String name,
@@ -14,7 +14,7 @@ public record WorkerUpdateReq(
         Gender gender,
         String residence,
         String RLG,
-        List<String> BLG,
-        List<String> jobInterest
+        Set<String> BLG,
+        Set<String> jobInterest
 ) {
 }

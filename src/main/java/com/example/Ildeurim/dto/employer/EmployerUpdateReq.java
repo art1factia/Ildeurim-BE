@@ -1,4 +1,15 @@
 package com.example.Ildeurim.dto.employer;
 
-public record EmployerUpdateReq() {
+import java.util.Set;
+
+public record EmployerUpdateReq(
+        String name,
+        String email,
+        String bossName,
+        String phoneNumber,
+        String companyName,
+        String companyLocation,
+        String companyNumber,
+        Set<String> jobFields
+) {
 }

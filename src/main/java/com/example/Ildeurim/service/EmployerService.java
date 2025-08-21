@@ -21,9 +21,12 @@ import org.json.JSONObject;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -68,11 +71,19 @@ public class EmployerService {
     public EmployerDetailRes me() {
         Long id = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
-        Employer employer = employerRepository.findById(id)
-                .get();
-        long reviewCount =  reviewRepository.countByEmployerId(id);
-        //TODO: JSON(questionList) -> 추후 상세 구현
-        return EmployerDetailRes.from(employer, reviewCount, new JSONObject());
+
+        UserType userType = AuthContext.userType()
+                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+
+        if (userType.equals(UserType.EMPLOYER)) {
+            Employer employer = employerRepository.findById(id)
+                    .get();
+            long reviewCount = reviewRepository.countByEmployerId(id);
+            //TODO: JSON(questionList) -> 추후 상세 구현
+            return EmployerDetailRes.from(employer, reviewCount, new JSONObject());
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not employer");
+        }
     }
 
     //TODO: update service 구현
