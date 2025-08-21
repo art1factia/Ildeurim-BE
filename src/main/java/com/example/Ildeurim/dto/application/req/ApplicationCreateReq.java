@@ -1,16 +1,19 @@
-package com.example.Ildeurim.dto.application;
+package com.example.Ildeurim.dto.application.req;
 
 import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
 import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
 import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.domain.Worker;
+import com.example.Ildeurim.domain.quickAnswer.AnswerList;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+@Getter
 public class ApplicationCreateReq {
     private Long jobPostId;
-    private Long workerId;
+    private Long workerId; //나중에 삭제할 예정
     private ApplyMethod applyMethod;
     private Boolean isCareerIncluding;
 
@@ -22,6 +25,7 @@ public class ApplicationCreateReq {
                 .isCareerIncluding(isCareerIncluding)
                 .jobPost(jobPost)
                 .worker(worker)
+                .answers(AnswerList.empty())
                 .build();
     }
 }

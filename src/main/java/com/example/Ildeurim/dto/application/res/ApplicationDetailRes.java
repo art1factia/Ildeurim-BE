@@ -1,13 +1,8 @@
-package com.example.Ildeurim.dto.application;
+package com.example.Ildeurim.dto.application.res;
 
 import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
-import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
-import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import com.example.Ildeurim.domain.Application;
-import com.example.Ildeurim.domain.Career;
 import com.example.Ildeurim.domain.quickAnswer.AnswerItem;
-import com.example.Ildeurim.domain.quickAnswer.AnswerList;
-import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,8 +31,8 @@ public class ApplicationDetailRes{
         private String workerPhoneNumber;
         private String workerAddress;
 
-        // 지원자 이력
-        private List<CareerRes> careers;
+//        // 지원자 이력
+//        private List<CareerRes> careers;
 
         // 추가 질문 답변
         private List<AnswerItem> answers;
@@ -58,9 +53,9 @@ public class ApplicationDetailRes{
             .workerPhoneNumber(worker.getPhoneNumber())
             .workerAddress(worker.getResidence())
 
-            .careers(worker.getCareers().stream()
-                        .map(CareerRes::from)
-                        .toList())
+//            .careers(worker.getCareers().stream()
+//                        .map(CareerRes::from)
+//                        .toList())
             .answers(application.getAnswers().items())
             .build();
 }

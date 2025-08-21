@@ -52,10 +52,9 @@ public class Career extends BaseEntity{
     @Column(nullable = false)
     private Integer workNumber;
 
-    @ElementCollection(targetClass = JobField.class)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private List<JobField> jobField = new ArrayList<>();   // 직무 분야
+    private JobField jobField;   // 직무 분야
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workerId", nullable = false)
