@@ -50,4 +50,5 @@ public class Review extends BaseEntity {
     @Column(name = "answer")             // answer = int (Converter 덕분에 숫자로 저장)
     private Map<EvaluationType, EvaluationAnswer> answers = new HashMap<>();
 
+    //으으
 }
