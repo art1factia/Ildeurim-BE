@@ -1,5 +1,7 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.command.EmployerUpdateCmd;
+import com.example.Ildeurim.command.WorkerUpdateCmd;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import jakarta.persistence.*;
@@ -9,7 +11,9 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -36,7 +40,7 @@ public class Employer extends BaseEntity {
     @NotBlank
     private String bossName;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     @Pattern(
             regexp = "^(01[016789]-\\d{3,4}-\\d{4}|02-\\d{3,4}-\\d{4}|0[3-9]{1}-\\d{3,4}-\\d{4})$",
             message = "전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678, 02-123-4567"
@@ -65,11 +69,22 @@ public class Employer extends BaseEntity {
             joinColumns = @JoinColumn(name = "employerId")
     ) //구직 분야 여러개 선택 가능
     @Column(name = "jobField")
-    private List<JobField> jobFields = new ArrayList<>();
+    private Set<JobField> jobFields = new HashSet<>();
 
     @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobPost> jobPosts = new ArrayList<>();
 
     @OneToMany(mappedBy = "employer")
     private List<Review> reviews = new ArrayList<>();
+
+    public void update(EmployerUpdateCmd cmd) {
+        cmd.name().ifPresent(this::setName);
+        cmd.email().ifPresent(this::setEmail);
+        cmd.bossName().ifPresent(this::setBossName);
+        cmd.phoneNumber().ifPresent(this::setPhoneNumber);
+        cmd.companyName().ifPresent(this::setCompanyName);
+        cmd.companyLocation().ifPresent(this::setCompanyLocation);
+        cmd.companyNumber().ifPresent(this::setCompanyNumber);
+        cmd.jobFields().ifPresent(this::setJobFields);
+    }
 }

@@ -43,6 +43,9 @@ public class WorkerService {
         if (principal == null || principal.userType() != UserType.WORKER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong user type for worker signup");
         }
+        if (! principal.scope().equals("signup")){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token scope is not in signup");
+        }
 
         // 2) 이미 존재하는지 확인 (이중확인)
         String phone = principal.phone();
@@ -79,6 +82,7 @@ public class WorkerService {
                 .get();
         WorkerUpdateCmd cmd = workerUpdateCmdMapper.toCmd(req, jobFieldMapper, workPlaceMapper);
         worker.update(cmd);
+        worker = workerRepository.save(worker);
         return WorkerRes.from(worker);
     }
 }

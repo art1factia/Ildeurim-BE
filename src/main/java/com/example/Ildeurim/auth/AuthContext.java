@@ -27,4 +27,7 @@ public final class AuthContext {
     public static Optional<String> phone() {
         return principal().map(CustomPrincipal::phone);
     }
+    public static Optional<String> scope() {
+        return principal().map(CustomPrincipal::scope);
+    }
 }

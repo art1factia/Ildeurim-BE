@@ -1,19 +1,12 @@
 package com.example.Ildeurim.jwt;
 
 import com.example.Ildeurim.auth.CustomPrincipal;
-import com.example.Ildeurim.auth.CustomUserDetails;
-import com.example.Ildeurim.commons.enums.UserType;
-import com.example.Ildeurim.domain.Employer;
-import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -69,13 +61,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     }
 
                     // ROLE_* 부여
-                    var principal   = new CustomPrincipal(userId, userType, phone);
+                    var principal   = new CustomPrincipal(userId, userType, phone, scope);
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + userType.name()));
                     seJtAuth(principal, authorities, req);
 
                 } else if ("signup".equals(scope)) {
                     // 가입 단계: ROLE 없이 가입 범위 권한만 부여
-                    var principal   = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws));
+                    var principal   = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws), scope);
                     var authorities = List.of(new SimpleGrantedAuthority("SCOPE_signup"));
                     seJtAuth(principal, authorities, req);
                 }

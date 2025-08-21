@@ -55,13 +55,13 @@ public class AuthController {
                     : employerRepository.findIdByPhoneNumber(req.phone());
             String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 60);
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, true))
+                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, false))
             );
         } else {
             String signup = jwtUtil.generateSignupToken(req.userType(), req.phone(), 15);
-            // 프론트는 이 토큰으로 /signup/{type} 화면에서 제출
+            // 프론트는 이 토큰으로 POST /{type} 화면에서 제출
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, false))
+                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, true))
             );
         }
     }
