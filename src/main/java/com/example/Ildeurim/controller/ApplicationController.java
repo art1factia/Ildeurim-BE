@@ -113,6 +113,30 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
 
+    /*지원 상태 변화*/
+    @PatchMapping("/{applicationId}/")
+    public ResponseEntity<ApiResponse<Void>> updateApplicationStatus(
+            @PathVariable Long applicationId,
+            @RequestBody ApplicationStatusUpdateReq req
+    ) {
+        applicationService.updateApplicationStatus(applicationId, req.newStatus().getLabel());
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, HttpStatus.OK.value(), "지원서 상태 변경 성공")
+        );
+    }
+
+    /*일괄 탈락 처리*/
+    @PatchMapping("/")
+    public ResponseEntity<ApiResponse> rejectNonHiredApplicants(
+            @PathVariable Long jobPostId
+    ) {
+        applicationService.rejectNonHiredApplicants(jobPostId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, HttpStatus.OK.value(), "불합격자 처리 완료")
+        );
+    }
 
 
 }
