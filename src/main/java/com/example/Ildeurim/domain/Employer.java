@@ -69,4 +69,7 @@ public class Employer extends BaseEntity {
 
     @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobPost> jobPosts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "employer")
+    private List<Review> reviews = new ArrayList<>();
 }

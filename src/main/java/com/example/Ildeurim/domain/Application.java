@@ -54,8 +54,12 @@ public class Application extends BaseEntity {
     @JoinColumn(name = "workerId", nullable = false)
     private Worker worker; // 지원자 정보
 
-    @OneToOne(mappedBy = "job", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-    private Application application;
+
+    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private Job job;
+
+//    @OneToOne(mappedBy = "job", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+//    private Application application;
 
 //    @Embeddable
 //    @Getter

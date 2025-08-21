@@ -1,4 +1,4 @@
-package com.example.Ildeurim.service.jobpost;
+package com.example.Ildeurim.service;
 
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.jobpost.JobPostDetailRes;
@@ -28,7 +28,7 @@ public class JobPostService {
     public JobPostDetailRes getJobPost(long id) {
         JobPost jobPost = jobPostRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 게시글을 찾을 수 없습니다. ID: " + id));
-
+        return JobPostDetailRes.of(jobPost);
 
     }
 

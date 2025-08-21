@@ -1,0 +1,35 @@
+package com.example.Ildeurim.dto.employer;
+
+import com.example.Ildeurim.domain.Employer;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+
+public record EmployerCreateReq(
+    @NotBlank String name,
+    @Email
+    @NotBlank String email,
+    @NotBlank String bossName,
+    @NotBlank @Pattern(
+            regexp = "^(01[016789]-\\d{3,4}-\\d{4}|02-\\d{3,4}-\\d{4}|0[3-9]{1}-\\d{3,4}-\\d{4})$",
+            message = "전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678, 02-123-4567"
+    ) String phoneNumber,
+    @NotBlank String companyName,
+    @NotBlank String companyLocation,
+    @NotBlank @Pattern(
+            regexp = "^\\d{3}-\\d{2}-\\d{5}$",
+            message = "사업자번호 형식이 올바르지 않습니다. 예: 123-45-67890"
+    ) String companyNumber
+) {
+        public Employer toEntity() {
+            return Employer.builder()
+                    .name(name)
+                    .email(email)
+                    .bossName(bossName)
+                    .phoneNumber(phoneNumber)
+                    .companyName(companyName)
+                    .companyLocation(companyLocation)
+                    .companyNumber(companyNumber)
+                    .build();
+        }
+    }
