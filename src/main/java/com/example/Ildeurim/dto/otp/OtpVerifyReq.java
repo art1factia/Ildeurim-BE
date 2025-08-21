@@ -1,4 +1,4 @@
-package com.example.Ildeurim.dto.OTP;
+package com.example.Ildeurim.dto.otp;
 
 import com.example.Ildeurim.commons.enums.UserType;
 import jakarta.validation.constraints.*;

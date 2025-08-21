@@ -1,4 +1,4 @@
-package com.example.Ildeurim.dto.OTP;
+package com.example.Ildeurim.dto.otp;
 
 public record SignupJwtRes (
         String accessToken,

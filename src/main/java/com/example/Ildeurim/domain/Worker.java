@@ -1,5 +1,6 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.command.WorkerUpdateCmd;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
@@ -12,7 +13,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -61,7 +64,7 @@ public class Worker extends BaseEntity {
             joinColumns = @JoinColumn(name = "workerId")
     )
     @Column(name = "blg", nullable = false)
-    private List<WorkPlace> BLG = new ArrayList<>();
+    private Set<WorkPlace> BLG = new HashSet<>();
 
     // 구직 분야 (jobInterest) - 여러 개 선택 가능
     @ElementCollection(targetClass = JobField.class)
@@ -71,7 +74,7 @@ public class Worker extends BaseEntity {
             joinColumns = @JoinColumn(name = "workerId")
     )
     @Column(name = "jobField", nullable = false)
-    private List<JobField> jobInterest = new ArrayList<>();
+    private Set<JobField> jobInterest = new HashSet<>();
 
     @OneToMany(mappedBy = "worker")
     private List<Application> applications = new ArrayList<>();
@@ -84,5 +87,16 @@ public class Worker extends BaseEntity {
 
     @OneToMany(mappedBy = "worker")
     private List<Career> careers = new ArrayList<>();
+
+    public void update(WorkerUpdateCmd cmd) {
+        cmd.name().ifPresent(this::setName);
+        cmd.phoneNumber().ifPresent(this::setPhoneNumber);
+        cmd.birthday().ifPresent(this::setBirthday);
+        cmd.gender().ifPresent(this::setGender);
+        cmd.residence().ifPresent(this::setResidence);
+        cmd.RLG().ifPresent(this::setRLG);
+        cmd.BLG().ifPresent(this::setBLG);
+        cmd.jobInterest().ifPresent(this::setJobInterest);
+    }
 
 }

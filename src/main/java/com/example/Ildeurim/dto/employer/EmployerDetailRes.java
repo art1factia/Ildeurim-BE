@@ -19,10 +19,10 @@ public record EmployerDetailRes(
         String companyNumber,
         List<JobField> jobFields,
 
-        int reviewCount,
+        long reviewCount,
         JSONObject questionList
 ) {
-    public static EmployerDetailRes from(Employer e, int reviewCount, JSONObject questionList) {
+    public static EmployerDetailRes from(Employer e, long reviewCount, JSONObject questionList) {
         return new EmployerDetailRes(
                 e.getId(),
                 e.getName(),

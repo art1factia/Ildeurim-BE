@@ -2,10 +2,10 @@ package com.example.Ildeurim.controller;
 
 import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.dto.ApiResponse;
-import com.example.Ildeurim.dto.OTP.JwtRes;
-import com.example.Ildeurim.dto.OTP.OtpSendReq;
-import com.example.Ildeurim.dto.OTP.OtpVerifyReq;
-import com.example.Ildeurim.dto.OTP.SignupJwtRes;
+import com.example.Ildeurim.dto.otp.JwtRes;
+import com.example.Ildeurim.dto.otp.OtpSendReq;
+import com.example.Ildeurim.dto.otp.OtpVerifyReq;
+import com.example.Ildeurim.dto.otp.SignupJwtRes;
 import com.example.Ildeurim.jwt.JwtUtil;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
@@ -14,15 +14,12 @@ import com.example.Ildeurim.service.SmsService;
 import com.example.Ildeurim.service.WorkerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController

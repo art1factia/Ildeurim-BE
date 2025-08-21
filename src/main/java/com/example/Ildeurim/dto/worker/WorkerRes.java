@@ -1,16 +1,14 @@
 package com.example.Ildeurim.dto.worker;
 
-
-import com.example.Ildeurim.commons.enums.worker.Gender;
-import com.example.Ildeurim.domain.Worker;
-// import com.example.Ildeurim.commons.enums.Gender;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
-import com.example.Ildeurim.commons.enums.worker.*;
+import com.example.Ildeurim.commons.enums.worker.Gender;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
+import com.example.Ildeurim.domain.Worker;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public record WorkerDetailRes(
+public record WorkerRes(
         Long id,
         String profileImgURL,
         String name,
@@ -20,13 +18,10 @@ public record WorkerDetailRes(
         String residence,
         String RLG,
         List<WorkPlace> BLG,
-        List<JobField> jobInterest,
-
-        //TODO: List<ApplicationRes>, List<JobRes> 추가
-        long applicationCount
+        List<JobField> jobInterest
 ) {
-    public static WorkerDetailRes from(Worker w, long applicationCount) {
-        return new WorkerDetailRes(
+    public static WorkerRes from(Worker w) {
+        return new WorkerRes(
                 w.getId(),
                 w.getProfileImgURL(),
                 w.getName(),
@@ -36,8 +31,7 @@ public record WorkerDetailRes(
                 w.getResidence(),
                 w.getRLG(),
                 w.getBLG() != null ? List.copyOf(w.getBLG()) : List.of(),
-                w.getJobInterest() != null ? List.copyOf(w.getJobInterest()) : List.of(),
-                applicationCount
+                w.getJobInterest() != null ? List.copyOf(w.getJobInterest()) : List.of()
         );
     }
 }

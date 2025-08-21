@@ -1,4 +1,4 @@
-package com.example.Ildeurim.dto.OTP;
+package com.example.Ildeurim.dto.otp;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
