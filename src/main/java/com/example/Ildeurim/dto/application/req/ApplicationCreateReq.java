@@ -6,16 +6,17 @@ import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.domain.quickAnswer.AnswerList;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Getter
 public class ApplicationCreateReq {
-    private Long jobPostId;
+    @NotNull private Long jobPostId;
     private Long workerId; //나중에 삭제할 예정
-    private ApplyMethod applyMethod;
-    private Boolean isCareerIncluding;
+    @NotNull private ApplyMethod applyMethod;
+    @NotNull private Boolean isCareerIncluding;
 
     public Application toEntity(JobPost jobPost, Worker worker) {
         return Application.builder()
