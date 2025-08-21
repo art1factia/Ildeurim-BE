@@ -86,7 +86,6 @@ public class EmployerService {
         }
     }
 
-    //TODO: update service 구현
     @Transactional
     public EmployerRes update(EmployerUpdateReq req){
         Long id = AuthContext.userId()

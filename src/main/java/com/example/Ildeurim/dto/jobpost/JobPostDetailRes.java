@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -28,14 +29,15 @@ public class JobPostDetailRes {
     private LocalTime workStartTime; //근무 시작 시간
     private LocalTime workEndTime; // 근무 마감 시간
     private WorkType workType;
-    private List<WorkDays> workDays;
+    private Set<WorkDays> workDays;
     private Integer workDaysCount;
     private JobPostStatus status;          // OPEN / CLOSED
     private Boolean careerRequirement; //경력
     private EducationRequirement educationRequirement; // 학력
     private EmploymentType employmentType;
+    private Set<JobField> jobFields;
 
-    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+    private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
     private LocalDateTime expiryDate;      // 마감일
 
@@ -59,6 +61,7 @@ public class JobPostDetailRes {
                 .careerRequirement(jobPost.getCareerRequirement())
                 .educationRequirement(jobPost.getEducationRequirement())
                 .employmentType(jobPost.getEmploymentType())
+                .jobFields(jobPost.getJobFields())
                 .applyMethods(jobPost.getApplyMethods())
                 .expiryDate(jobPost.getExpiryDate())
                 .employerName(jobPost.getEmployer().getName())

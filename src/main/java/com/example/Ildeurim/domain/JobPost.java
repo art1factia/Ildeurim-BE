@@ -3,17 +3,17 @@ package com.example.Ildeurim.domain;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+import java.util.Set;
 
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
@@ -51,7 +51,7 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
             joinColumns = @JoinColumn(name = "jobPostId") //오타수정((jobpostId -> jobPostId)
     )
     @Enumerated(EnumType.STRING)
-    private List<WorkDays> workDays;
+    private Set<WorkDays> workDays;
 
     private Integer workNumber;
 
@@ -64,7 +64,15 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
             joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
-    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+    private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+
+    @ElementCollection
+    @CollectionTable(
+            name = "jobPostJobFields",
+            joinColumns = @JoinColumn(name = "jobPostId")
+    )
+    @Enumerated(EnumType.STRING)
+    private Set<JobField> jobFields;
 
 //    @ElementCollection
 //    @CollectionTable(
@@ -90,8 +98,8 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private LocalTime workEndTime;         // 근무 종료 시간
 
-    @Column(nullable = false)
-    private Boolean haveCareer= false; // 경력 요구사항
+//    @Column(nullable = false)
+//    private Boolean haveCareer= false; // 경력 요구사항
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -106,5 +114,7 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     private Employer employer;             // 고용주 정보
 
     @OneToMany(mappedBy = "jobPost", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Application> applications; // 지원자 리스트
+    private Set<Application> applications; // 지원자 리스트
+
+    //TODO: update 메서드 만들기
 }
