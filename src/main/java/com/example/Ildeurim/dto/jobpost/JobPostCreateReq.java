@@ -40,7 +40,7 @@ public record JobPostCreateReq(
                 .restTime(restTime)
                 .workType(WorkType.fromLabel(workType))
                 .workDays(workDays.stream().map(WorkDays::fromLabel).collect(Collectors.toSet()))
-                .workNumber(workNumber)
+                .workDaysCount(workNumber)
                 .careerRequirement(careerRequirement)
                 .applyMethods(applyMethods.stream().map(ApplyMethod::fromLabel).collect(Collectors.toSet()))
                 .jobFields(jobFields.stream().map(JobField::fromLabel).collect(Collectors.toSet()))

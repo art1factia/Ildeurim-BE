@@ -20,7 +20,6 @@ public record WorkerUpdateCmd(
         Optional<String> residence,
         Optional<String> RLG,
         Optional<Set<WorkPlace>> BLG,
-        Optional<Set<JobField>> jobInterest,
-        long workerId
+        Optional<Set<JobField>> jobInterest
 ) {
 }

@@ -13,7 +13,7 @@ public record JobPostUpdateReq (
         Integer restTime,
         String workType,
         List<String> workDays,
-        Integer workNumber,
+        Integer workDaysCount,
         Boolean careerRequirement,
         List<String> applyMethods,
         List<String> jobFields,

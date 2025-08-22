@@ -47,7 +47,7 @@ public record JobPostRes(
                 j.getRestTime(),
                 j.getWorkType(),
                 j.getWorkDays(),
-                j.getWorkNumber(),
+                j.getWorkDaysCount(),
                 j.getCareerRequirement(),
                 j.getApplyMethods(),
                 j.getJobFields(),

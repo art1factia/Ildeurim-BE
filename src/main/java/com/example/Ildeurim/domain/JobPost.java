@@ -1,12 +1,15 @@
 package com.example.Ildeurim.domain;
 
 import com.example.Ildeurim.command.JobPostUpdateCmd;
+import com.example.Ildeurim.commons.converter.QuestionListJsonConverter;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Set;
@@ -17,7 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
+public class JobPost extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,12 +52,13 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
 
     @ElementCollection
     @CollectionTable(
-            name = "jobPostWorkDays", //오타 수정(jobpostWorkDays -> jobPostWorkDays)
-            joinColumns = @JoinColumn(name = "jobPostId") //오타수정((jobpostId -> jobPostId)
+            name = "jobPostWorkDays",
+            joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
     private Set<WorkDays> workDays;
 
+    @Column
     private Integer workDaysCount;
 
     @Column(nullable = false)
@@ -75,14 +79,6 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     )
     @Enumerated(EnumType.STRING)
     private Set<JobField> jobFields;
-
-//    @ElementCollection
-//    @CollectionTable(
-//            name = "jobpost_questions",
-//            joinColumns = @JoinColumn(name = "jobpost_id")
-//    )
-//    @Column(name = "question", nullable = false)
-//    private List<String> questionList;      // 지원 시 질문 목록
 
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
@@ -115,12 +111,28 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private WorkPlace workPlace;
 
+    @Enumerated(EnumType.STRING)
+    @ElementCollection
+    @CollectionTable(
+            name = "jobPostJobFields",
+            joinColumns = @JoinColumn(name = "jobPostId")
+    )
+    private Set<ApplyMethod> applyMethod;
+
+    @Column(nullable = false)
+    private Boolean isJobPostUsing=false;  //모집 공고를 계속 이용할건지
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employerId", nullable = false)
     private Employer employer;             // 고용주 정보
 
     @OneToMany(mappedBy = "jobPost", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Application> applications; // 지원자 리스트
+
+    @Convert(converter = QuestionListJsonConverter.class)
+    @Column(columnDefinition = "jsonb")
+    private QuestionList questionList;
+
 
     //TODO: update 메서드 만들기
     public void update(JobPostUpdateCmd cmd) {

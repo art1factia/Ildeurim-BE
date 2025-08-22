@@ -1,9 +1,11 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.commons.converter.QuestionListJsonConverter;
 import com.example.Ildeurim.command.EmployerUpdateCmd;
 import com.example.Ildeurim.command.WorkerUpdateCmd;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -73,6 +75,10 @@ public class Employer extends BaseEntity {
 
     @OneToMany(mappedBy = "employer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<JobPost> jobPosts = new ArrayList<>();
+
+    @Convert(converter = QuestionListJsonConverter.class)
+    @Column(columnDefinition = "jsonb") // PostgreSQL이면 jsonb 추천
+    private QuestionList defaultQuestionList; // 기본 질문 세트
 
     @OneToMany(mappedBy = "employer")
     private List<Review> reviews = new ArrayList<>();

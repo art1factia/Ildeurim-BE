@@ -2,6 +2,7 @@ package com.example.Ildeurim.dto.jobpost;
 
 import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
+import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.JobPost;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class SimpleJobPostRes {
     private Set<ApplyMethod> applyMethods;       // 지원 방법 (간편지원, 전화지원 등)
     private LocalDateTime expiryDate;             // 채용 마감 기한
     private Set<JobField> jobFields;             // 구직 분야
+    private JobPostStatus status;
 
     public static SimpleJobPostRes of(JobPost jobPost)
     { return SimpleJobPostRes.builder()
@@ -32,8 +34,9 @@ public class SimpleJobPostRes {
             .companyName(jobPost.getEmployer().getCompanyName())
             .applyMethods(jobPost.getApplyMethods())
             .location(jobPost.getLocation())
-            .jobFields(jobPost.getEmployer().getJobFields())
+            .jobFields(jobPost.getJobFields())
             .expiryDate(jobPost.getExpiryDate())
+            .status(jobPost.getStatus())
             .build();
             }
 }

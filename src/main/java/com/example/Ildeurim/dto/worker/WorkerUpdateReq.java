@@ -10,7 +10,7 @@ import java.util.Set;
 public record WorkerUpdateReq(
         String name,
         String phoneNumber,
-        LocalDate birthday,
+        String birthday,
         Gender gender,
         String residence,
         String RLG,
