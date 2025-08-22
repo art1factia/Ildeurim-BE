@@ -21,4 +21,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                                     @Param("question") String question);
 
     List<Review> findByEmployer(Employer employer);
+    // 파생 쿼리: Review.employer.id 로 카운트
+    long countByEmployerId(Long employerId);
 }

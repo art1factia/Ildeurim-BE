@@ -2,10 +2,10 @@ package com.example.Ildeurim.controller;
 
 import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.dto.ApiResponse;
-import com.example.Ildeurim.dto.OTP.JwtRes;
-import com.example.Ildeurim.dto.OTP.OtpSendReq;
-import com.example.Ildeurim.dto.OTP.OtpVerifyReq;
-import com.example.Ildeurim.dto.OTP.SignupJwtRes;
+import com.example.Ildeurim.dto.otp.JwtRes;
+import com.example.Ildeurim.dto.otp.OtpSendReq;
+import com.example.Ildeurim.dto.otp.OtpVerifyReq;
+import com.example.Ildeurim.dto.otp.SignupJwtRes;
 import com.example.Ildeurim.jwt.JwtUtil;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
@@ -14,15 +14,12 @@ import com.example.Ildeurim.service.SmsService;
 import com.example.Ildeurim.service.WorkerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -58,13 +55,13 @@ public class AuthController {
                     : employerRepository.findIdByPhoneNumber(req.phone());
             String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 60);
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, true))
+                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, false))
             );
         } else {
             String signup = jwtUtil.generateSignupToken(req.userType(), req.phone(), 15);
-            // 프론트는 이 토큰으로 /signup/{type} 화면에서 제출
+            // 프론트는 이 토큰으로 POST /{type} 화면에서 제출
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, false))
+                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, true))
             );
         }
     }

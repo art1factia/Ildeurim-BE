@@ -1,26 +1,38 @@
 package com.example.Ildeurim.service;
 
+import com.example.Ildeurim.auth.AuthContext;
 import com.example.Ildeurim.auth.CustomPrincipal;
+import com.example.Ildeurim.command.WorkerUpdateCmd;
 import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.employer.EmployerDetailRes;
-import com.example.Ildeurim.dto.worker.WorkerCreateReq;
-import com.example.Ildeurim.dto.worker.WorkerDetailRes;
-import com.example.Ildeurim.dto.worker.WorkerSignupRes;
+import com.example.Ildeurim.dto.worker.*;
 import com.example.Ildeurim.jwt.JwtUtil;
+import com.example.Ildeurim.mapper.JobFieldMapper;
+import com.example.Ildeurim.mapper.WorkPlaceMapper;
+import com.example.Ildeurim.mapper.WorkerUpdateCmdMapper;
+import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class WorkerService {
     private final WorkerRepository workerRepository;
+    private final ApplicationRepository applicationRepository;
     private final JwtUtil jwtUtil;
+    private final WorkerUpdateCmdMapper workerUpdateCmdMapper;
+    private final JobFieldMapper jobFieldMapper;
+    private final WorkPlaceMapper workPlaceMapper;
 
     /**
      * 가입 전용 토큰(scope=signup, userType=WORKER)으로만 호출되어야 함.
@@ -31,6 +43,9 @@ public class WorkerService {
         // 1) 토큰 검증: WORKER 가입인지 확인
         if (principal == null || principal.userType() != UserType.WORKER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong user type for worker signup");
+        }
+        if (!principal.scope().equals("signup")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token scope is not in signup");
         }
 
         // 2) 이미 존재하는지 확인 (이중확인)
@@ -48,8 +63,34 @@ public class WorkerService {
         return new WorkerSignupRes(worker.getId(), accessToken, expEpochSec);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public WorkerDetailRes me() {
-        //TODO: jwt token -> worker user find 작성
+        Long id = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+
+        UserType userType = AuthContext.userType()
+                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+        if (userType.equals(UserType.WORKER)) {
+            Worker worker = workerRepository.findById(id)
+                    .get();
+            //TODO: List<ApplicationRes>, List<JobRes> 붙여서 DTO 만들기
+            long applicationCount = applicationRepository.countByWorkerId(id);
+            return WorkerDetailRes.from(worker, applicationCount);
+        } else {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not employer");
+        }
+    }
+
+    //TODO: update service 구현
+    @Transactional
+    public WorkerRes update(WorkerUpdateReq req) {
+        Long id = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+        Worker worker = workerRepository.findById(id)
+                .get();
+        WorkerUpdateCmd cmd = workerUpdateCmdMapper.toCmd(req, jobFieldMapper, workPlaceMapper);
+        worker.update(cmd);
+        worker = workerRepository.save(worker);
+        return WorkerRes.from(worker);
     }
 }

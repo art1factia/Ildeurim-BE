@@ -30,4 +30,14 @@ public enum EducationRequirement {
         }
         throw new IllegalArgumentException("Unknown EducationRequirement label: " + label);
     }
+
+    @JsonCreator
+    public static EducationRequirement fromLabelNullable(String label) {
+        for (EducationRequirement educReq : values()) {
+            if (educReq.label.equals(label)) {
+                return educReq;
+            }
+        }
+        return null;
+    }
 }

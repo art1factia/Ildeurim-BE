@@ -1,5 +1,6 @@
 package com.example.Ildeurim.commons.enums.jobpost;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum JobField {
@@ -27,6 +28,26 @@ public enum JobField {
     @JsonValue // JSON 직렬화 시 label 값이 반환되도록 함
     public String getLabel() {
         return label;
+    }
+
+    @JsonCreator
+    public static JobField fromLabel(String label) {
+        for (JobField jobfield : values()) {
+            if (jobfield.label.equals(label)) {
+                return jobfield;
+            }
+        }
+        throw new IllegalArgumentException("Unknown JobField label: " + label);
+    }
+
+    @JsonCreator
+    public static JobField fromLabelNullable(String label) {
+        for (JobField field : values()) {
+            if (field.label.equals(label)) {
+                return field;
+            }
+        }
+        return null;
     }
 }
 

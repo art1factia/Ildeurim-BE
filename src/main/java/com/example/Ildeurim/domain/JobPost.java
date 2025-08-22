@@ -1,20 +1,22 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.command.JobPostUpdateCmd;
 import com.example.Ildeurim.commons.converter.QuestionListJsonConverter;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import com.example.Ildeurim.domain.quickAnswer.QuestionList;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+import java.util.Set;
 
+@Builder
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -28,7 +30,7 @@ public class JobPost extends BaseEntity {
     @Column(nullable = false)
     private String title;                  // 모집 제목
 
-    @Column(nullable = false, columnDefinition = "TEXT",length = 500)
+    @Column(nullable = false, columnDefinition = "TEXT", length = 500)
     private String content;                // 상세 내용
 
     @Enumerated(EnumType.STRING)
@@ -48,18 +50,15 @@ public class JobPost extends BaseEntity {
     @Column(nullable = false)
     private WorkType workType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private JobField jobField;
-
     @ElementCollection
     @CollectionTable(
             name = "jobPostWorkDays",
             joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
-    private List<WorkDays> workDays;
+    private Set<WorkDays> workDays;
 
+    @Column
     private Integer workDaysCount;
 
     @Column(nullable = false)
@@ -71,11 +70,20 @@ public class JobPost extends BaseEntity {
             joinColumns = @JoinColumn(name = "jobPostId")
     )
     @Enumerated(EnumType.STRING)
-    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+    private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
+
+    @ElementCollection
+    @CollectionTable(
+            name = "jobPostJobFields",
+            joinColumns = @JoinColumn(name = "jobPostId")
+    )
+    @Enumerated(EnumType.STRING)
+    private Set<JobField> jobFields;
 
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
 
+    @Column(nullable = false)
     private LocalDateTime expiryDate;      // 마감일
 
     @Enumerated(EnumType.STRING)
@@ -88,8 +96,8 @@ public class JobPost extends BaseEntity {
     @Column(nullable = false)
     private LocalTime workEndTime;         // 근무 종료 시간
 
-    @Column(nullable = false)
-    private Boolean haveCareer= false; // 경력 요구사항
+//    @Column(nullable = false)
+//    private Boolean haveCareer= false; // 경력 요구사항
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -101,7 +109,15 @@ public class JobPost extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private List<ApplyMethod> applyMethod;
+    private WorkPlace workPlace;
+
+    @Enumerated(EnumType.STRING)
+    @ElementCollection
+    @CollectionTable(
+            name = "jobPostJobFields",
+            joinColumns = @JoinColumn(name = "jobPostId")
+    )
+    private Set<ApplyMethod> applyMethod;
 
     @Column(nullable = false)
     private Boolean isJobPostUsing=false;  //모집 공고를 계속 이용할건지
@@ -111,9 +127,32 @@ public class JobPost extends BaseEntity {
     private Employer employer;             // 고용주 정보
 
     @OneToMany(mappedBy = "jobPost", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Application> applications; // 지원자 리스트
+    private Set<Application> applications; // 지원자 리스트
 
     @Convert(converter = QuestionListJsonConverter.class)
     @Column(columnDefinition = "jsonb")
     private QuestionList questionList;
+
+
+    //TODO: update 메서드 만들기
+    public void update(JobPostUpdateCmd cmd) {
+        cmd.title().ifPresent(this::setTitle);
+        cmd.paymentType().ifPresent(this::setPaymentType);
+        cmd.payment().ifPresent(this::setPayment);
+        cmd.location().ifPresent(this::setLocation);
+        cmd.content().ifPresent(this::setContent);
+        cmd.workStartTime().ifPresent(this::setWorkStartTime);
+        cmd.workEndTime().ifPresent(this::setWorkEndTime);
+        cmd.workType().ifPresent(this::setWorkType);
+        cmd.workDays().ifPresent(this::setWorkDays);
+        cmd.workDaysCount().ifPresent(this::setWorkDaysCount);
+        cmd.status().ifPresent(this::setStatus);
+        cmd.careerRequirement().ifPresent(this::setCareerRequirement);
+        cmd.educationRequirement().ifPresent(this::setEducationRequirement);
+        cmd.employmentType().ifPresent(this::setEmploymentType);
+        cmd.jobFields().ifPresent(this::setJobFields);
+        cmd.applyMethods().ifPresent(this::setApplyMethods);
+        cmd.expiryDate().ifPresent(this::setExpiryDate);
+        cmd.workPlace().ifPresent(this::setWorkPlace);
+    }
 }

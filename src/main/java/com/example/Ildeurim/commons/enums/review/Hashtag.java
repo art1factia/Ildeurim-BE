@@ -1,5 +1,7 @@
 package com.example.Ildeurim.commons.enums.review;
 
+import com.example.Ildeurim.commons.enums.jobpost.ApplyMethod;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Hashtag {
@@ -58,5 +60,14 @@ public enum Hashtag {
     @JsonValue // JSON 직렬화 시 label 값이 반환되도록 함
     public String getLabel() {
         return label;
+    }
+    @JsonCreator
+    public static Hashtag fromLabel(String label) {
+        for (Hashtag hashtag : values()) {
+            if (hashtag.label.equals(label)) {
+                return hashtag;
+            }
+        }
+        throw new IllegalArgumentException("Unknown hashtag label: " + label);
     }
 }

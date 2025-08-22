@@ -2,63 +2,59 @@ package com.example.Ildeurim.dto.jobpost;
 
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import com.example.Ildeurim.domain.JobPost;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import org.hibernate.jdbc.Work;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Getter
-@Builder
-@AllArgsConstructor
-public class JobPostCreateReq {
-    private List<ApplyMethod> applyMethod;
-
-    private String title;
-    private LocalDateTime startDate;
-    private LocalDateTime expiryDate;
-    private JobField jobField;
-
-    private PaymentType paymentType;
-    private Long payment;
-    private String location;
-
-    private Boolean careerRequirement;
-    private EducationRequirement educationRequirement;
-    private EmploymentType employmentType;
-
-    private WorkType workType;
-    private List<WorkDays> workDays;
-    private LocalTime workStartTime;
-    private LocalTime workEndTime;
-    private Integer workDaysCount;
-
-    private String content;
-
-    public JobPost toEntity()
-    { return JobPost.builder()
-                .applyMethod(applyMethod)
+public record JobPostCreateReq(
+        String title,
+        String content,
+        String paymentType,
+        Long payment,
+        String location,
+        Integer restTime,
+        String workType,
+        List<String> workDays,
+        Integer workNumber,
+        Boolean careerRequirement,
+        List<String> applyMethods,
+        List<String> jobFields,
+        LocalDateTime startDate,
+        LocalDateTime expiryDate,
+        String status,
+        LocalTime workStartTime,
+        LocalTime workEndTime,
+        String educationRequirement,
+        String employmentType
+) {
+    public JobPost toEntity() {
+        return JobPost.builder()
                 .title(title)
-                .startDate(startDate)
-                .expiryDate(expiryDate)
-                .jobField(jobField)
-                .paymentType(paymentType)
+                .content(content)
+                .paymentType(PaymentType.fromLabel(paymentType))
                 .payment(payment)
                 .location(location)
+                .restTime(restTime)
+                .workType(WorkType.fromLabel(workType))
+                .workDays(workDays.stream().map(WorkDays::fromLabel).collect(Collectors.toSet()))
+                .workDaysCount(workNumber)
                 .careerRequirement(careerRequirement)
-                .educationRequirement(educationRequirement)
-                .employmentType(employmentType)
-                .workType(workType)
-                .workDays(workDays)
-                .workStartTime(workStartTime)
+                .applyMethods(applyMethods.stream().map(ApplyMethod::fromLabel).collect(Collectors.toSet()))
+                .jobFields(jobFields.stream().map(JobField::fromLabel).collect(Collectors.toSet()))
+
+                .startDate(startDate) //TODO: LocalDateTime 형변환
+                .expiryDate(expiryDate) //TODO: LocalDateTime 형변환
+
+                .status(JobPostStatus.fromLabel(status))
+
+                .workStartTime(workStartTime)//TODO: LocalTime 형변환
+
                 .workEndTime(workEndTime)
-                .workDaysCount(workDaysCount)
-                .content(content)
+                .educationRequirement(EducationRequirement.fromLabel(educationRequirement))
+                .employmentType(EmploymentType.fromLabel(employmentType))
                 .build();
     }
-
-
 }

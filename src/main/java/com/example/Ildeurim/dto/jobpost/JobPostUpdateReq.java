@@ -1,12 +1,30 @@
 package com.example.Ildeurim.dto.jobpost;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
-@Getter
-@Builder
-@AllArgsConstructor
-public class JobPostUpdateReq {
+public record JobPostUpdateReq (
+        String title,
+        String content,
+        String paymentType,
+        Long payment,
+        String location,
+        Integer restTime,
+        String workType,
+        List<String> workDays,
+        Integer workDaysCount,
+        Boolean careerRequirement,
+        List<String> applyMethods,
+        List<String> jobFields,
+        LocalDateTime startDate,
+        LocalDateTime expiryDate,
+        String status,
+        LocalTime workStartTime,
+        LocalTime workEndTime,
+        String educationRequirement,
+        String employmentType,
+        String workPlace
+){
 
 }

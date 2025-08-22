@@ -1,5 +1,6 @@
 package com.example.Ildeurim.commons.enums.worker;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum WorkPlace {
@@ -40,6 +41,15 @@ public enum WorkPlace {
     @JsonValue // JSON 직렬화 시 label 값이 반환되도록 함
     public String getLabel() {
         return label;
+    }
+    @JsonCreator
+    public static WorkPlace fromLabel(String label) {
+        for (WorkPlace type : values()) {
+            if (type.label.equals(label)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown PaymentType label: " + label);
     }
 }
 

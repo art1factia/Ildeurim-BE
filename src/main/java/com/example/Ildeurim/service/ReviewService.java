@@ -1,4 +1,4 @@
-package com.example.Ildeurim.service.review;
+package com.example.Ildeurim.service;
 
 import com.example.Ildeurim.commons.enums.review.EvaluationAnswer;
 import com.example.Ildeurim.commons.enums.review.EvaluationType;

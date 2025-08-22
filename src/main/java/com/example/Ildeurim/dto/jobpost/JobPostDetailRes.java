@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -23,26 +24,26 @@ public class JobPostDetailRes {
     private Long payment;                  // 급여 금액
 
     private String location;               // 근무 위치
-    private String content;                // 상세 내용
 
-    private LocalTime workStartTime;       // 근무 시작 시간
-    private LocalTime workEndTime;         // 근무 종료 시간
-
-    private WorkType workType;             // 근무 형태
-    private Integer workDaysCount;         // 주 몇 회 근무
-    private List<WorkDays> workDays;       // 요일 선택
-
+    private String content;                  // 상세 내용
+    private LocalTime workStartTime; //근무 시작 시간
+    private LocalTime workEndTime; // 근무 마감 시간
+    private WorkType workType;
+    private Set<WorkDays> workDays;
+    private Integer workDaysCount;
     private JobPostStatus status;          // OPEN / CLOSED
-    private Boolean careerRequirement;     // 경력 요구 여부
+    private Boolean careerRequirement; //경력
     private EducationRequirement educationRequirement; // 학력
-    private EmploymentType employmentType; // 고용 형태
+    private EmploymentType employmentType;
+    private Set<JobField> jobFields;
 
-    private List<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화 등)
+    private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
     private LocalDateTime expiryDate;      // 마감일
 
-    private String employerName;           // 고용주 이름
-    private String employerPhone;          // 고용주 전화번호
+    private String employerName;
+    private String employerPhone;
+
 
     public static JobPostDetailRes of(JobPost jobPost) {
         return JobPostDetailRes.builder()
@@ -60,9 +61,10 @@ public class JobPostDetailRes {
                 .workDaysCount(jobPost.getWorkDaysCount())
                 .workDays(jobPost.getWorkDays())
                 .status(jobPost.getStatus())
-                .careerRequirement(jobPost.getHaveCareer())
+                .careerRequirement(jobPost.getCareerRequirement())
                 .educationRequirement(jobPost.getEducationRequirement())
                 .employmentType(jobPost.getEmploymentType())
+                .jobFields(jobPost.getJobFields())
                 .applyMethods(jobPost.getApplyMethods())
                 .expiryDate(jobPost.getExpiryDate())
                 .employerName(jobPost.getEmployer().getName())

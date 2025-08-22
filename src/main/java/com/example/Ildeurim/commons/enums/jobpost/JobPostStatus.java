@@ -26,5 +26,15 @@ public enum JobPostStatus{
         }
         throw new IllegalArgumentException("Unknown JobpostStatus label: " + label);
     }
+
+    @JsonCreator
+    public static JobPostStatus fromLabelNullable(String label) {
+        for (JobPostStatus status : values()) {
+            if (status.label.equals(label)) {
+                return status;
+            }
+        }
+        return null;
+    }
 }
 

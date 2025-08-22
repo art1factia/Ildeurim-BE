@@ -4,9 +4,8 @@ import com.example.Ildeurim.dto.ApiResponse;
 import com.example.Ildeurim.dto.review.ReviewCreateReq;
 import com.example.Ildeurim.dto.review.ReviewRes;
 import com.example.Ildeurim.dto.review.ReviewSummaryRes;
-import com.example.Ildeurim.service.review.ReviewService;
+import com.example.Ildeurim.service.ReviewService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
