@@ -3,11 +3,15 @@ package com.example.Ildeurim.controller;
 
 import com.example.Ildeurim.auth.AuthContext;
 import com.example.Ildeurim.dto.ApiResponse;
+import com.example.Ildeurim.dto.career.CareerRes;
 import com.example.Ildeurim.dto.worker.*;
+import com.example.Ildeurim.service.CareerService;
 import com.example.Ildeurim.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -16,6 +20,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RequestMapping(value = "/workers")
 public class WorkerController {
     private final WorkerService workerService;
+    private final CareerService careerService;
 
     @PostMapping
     public ResponseEntity<ApiResponse> createWorker(@RequestBody WorkerCreateReq req) {
@@ -27,6 +32,12 @@ public class WorkerController {
     public ResponseEntity<ApiResponse> me() {
         WorkerDetailRes res = workerService.me();
         return ok(new ApiResponse(true, 201, "get me success", res));
+    }
+
+    @GetMapping("/me/careers")
+    public ResponseEntity<ApiResponse> meCareerList() {
+        List<CareerRes> res = careerService.getWorkerCareerList();
+        return ok(new ApiResponse(true, 201, "get me career success", res));
     }
 
     @PatchMapping("/me")
