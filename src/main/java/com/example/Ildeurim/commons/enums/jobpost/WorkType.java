@@ -27,4 +27,13 @@ public enum WorkType {
         }
         throw new IllegalArgumentException("Unknown PaymentType label: " + label);
     }
+    @JsonCreator
+    public static WorkType fromLabelNullable(String label) {
+        for (WorkType type : values()) {
+            if (type.label.equals(label)) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

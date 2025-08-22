@@ -32,4 +32,13 @@ public enum WorkDays {
         }
         throw new IllegalArgumentException("Unknown PaymentType label: " + label);
     }
+    @JsonCreator
+    public static WorkDays fromLabelNullable(String label) {
+        for (WorkDays workDays : values()) {
+            if (workDays.label.equals(label)) {
+                return workDays;
+            }
+        }
+        return null;
+    }
 }

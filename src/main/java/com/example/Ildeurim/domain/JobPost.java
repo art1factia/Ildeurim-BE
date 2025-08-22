@@ -1,7 +1,9 @@
 package com.example.Ildeurim.domain;
 
+import com.example.Ildeurim.command.JobPostUpdateCmd;
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.jobpost.*;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +27,7 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private String title;                  // 모집 제목
 
-    @Column(nullable = false, columnDefinition = "TEXT",length = 500)
+    @Column(nullable = false, columnDefinition = "TEXT", length = 500)
     private String content;                // 상세 내용
 
     @Enumerated(EnumType.STRING)
@@ -53,7 +55,7 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Enumerated(EnumType.STRING)
     private Set<WorkDays> workDays;
 
-    private Integer workNumber;
+    private Integer workDaysCount;
 
     @Column(nullable = false)
     private Boolean careerRequirement; //type이 boolean이라 enum 없이 사용하도록 변경
@@ -109,6 +111,10 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     @Column(nullable = false)
     private EmploymentType employmentType; // 고용 형태
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WorkPlace workPlace;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employerId", nullable = false)
     private Employer employer;             // 고용주 정보
@@ -117,4 +123,24 @@ public class JobPost extends BaseEntity {   // ✅ BaseEntity 상속
     private Set<Application> applications; // 지원자 리스트
 
     //TODO: update 메서드 만들기
+    public void update(JobPostUpdateCmd cmd) {
+        cmd.title().ifPresent(this::setTitle);
+        cmd.paymentType().ifPresent(this::setPaymentType);
+        cmd.payment().ifPresent(this::setPayment);
+        cmd.location().ifPresent(this::setLocation);
+        cmd.content().ifPresent(this::setContent);
+        cmd.workStartTime().ifPresent(this::setWorkStartTime);
+        cmd.workEndTime().ifPresent(this::setWorkEndTime);
+        cmd.workType().ifPresent(this::setWorkType);
+        cmd.workDays().ifPresent(this::setWorkDays);
+        cmd.workDaysCount().ifPresent(this::setWorkDaysCount);
+        cmd.status().ifPresent(this::setStatus);
+        cmd.careerRequirement().ifPresent(this::setCareerRequirement);
+        cmd.educationRequirement().ifPresent(this::setEducationRequirement);
+        cmd.employmentType().ifPresent(this::setEmploymentType);
+        cmd.jobFields().ifPresent(this::setJobFields);
+        cmd.applyMethods().ifPresent(this::setApplyMethods);
+        cmd.expiryDate().ifPresent(this::setExpiryDate);
+        cmd.workPlace().ifPresent(this::setWorkPlace);
+    }
 }

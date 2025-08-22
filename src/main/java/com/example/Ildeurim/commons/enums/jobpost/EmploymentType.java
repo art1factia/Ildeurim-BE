@@ -32,4 +32,13 @@ public enum EmploymentType {
         }
         throw new IllegalArgumentException("Unknown EmploymentType label: " + label);
     }
+    @JsonCreator
+    public static EmploymentType fromLabelNullable(String label) {
+        for (EmploymentType type : values()) {
+            if (type.label.equals(label)) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

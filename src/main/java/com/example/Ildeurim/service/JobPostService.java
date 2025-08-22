@@ -1,10 +1,12 @@
 package com.example.Ildeurim.service;
 
 import com.example.Ildeurim.auth.AuthContext;
+import com.example.Ildeurim.command.JobPostUpdateCmd;
 import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
 import com.example.Ildeurim.domain.Employer;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.jobpost.*;
+import com.example.Ildeurim.mapper.*;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.JobPostRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,6 +22,11 @@ import java.util.List;
 public class JobPostService {
     private final JobPostRepository jobPostRepository;
     private final EmployerRepository employerRepository;
+    private final JobPostUpdateCmdMapper jobPostUpdateCmdMapper;
+    private final JobFieldMapper jobFieldMapper;
+    private final ApplyMethodMapper applyMethodMapper;
+    private final WorkDaysMapper workDaysMapper;
+    private final WorkPlaceMapper workPlaceMapper;
 
     //공지글 전체 조회
     @Transactional(readOnly = true)
@@ -72,6 +79,9 @@ public class JobPostService {
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
         if (!isMine) throw new AccessDeniedException("no access to update job post");
         //TODO: Cmd, Mapper 만들고 update와 연결
+        JobPostUpdateCmd cmd = jobPostUpdateCmdMapper.toCmd(req, jobFieldMapper, applyMethodMapper, workDaysMapper, workPlaceMapper);
+        jobPost.update(cmd);
+        jobPost = jobPostRepository.save(jobPost);
         return JobPostRes.from(jobPost);
 
     }

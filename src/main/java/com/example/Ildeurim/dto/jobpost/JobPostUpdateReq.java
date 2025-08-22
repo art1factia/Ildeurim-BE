@@ -23,6 +23,7 @@ public record JobPostUpdateReq (
         LocalTime workStartTime,
         LocalTime workEndTime,
         String educationRequirement,
-        String employmentType
+        String employmentType,
+        String workPlace
 ){
 }

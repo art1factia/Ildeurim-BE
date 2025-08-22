@@ -26,4 +26,14 @@ public enum ApplyMethod {
         }
         throw new IllegalArgumentException("Unknown ApplyMethod label: " + label);
     }
+
+    @JsonCreator
+    public static ApplyMethod fromLabelNullable(String label) {
+        for (ApplyMethod method : values()) {
+            if (method.label.equals(label)) {
+                return method;
+            }
+        }
+        return null;
+    }
 }

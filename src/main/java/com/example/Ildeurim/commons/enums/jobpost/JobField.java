@@ -39,5 +39,15 @@ public enum JobField {
         }
         throw new IllegalArgumentException("Unknown JobField label: " + label);
     }
+
+    @JsonCreator
+    public static JobField fromLabelNullable(String label) {
+        for (JobField field : values()) {
+            if (field.label.equals(label)) {
+                return field;
+            }
+        }
+        return null;
+    }
 }
 

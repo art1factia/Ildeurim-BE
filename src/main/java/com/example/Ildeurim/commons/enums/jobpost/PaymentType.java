@@ -29,4 +29,13 @@ public enum PaymentType {
         }
         throw new IllegalArgumentException("Unknown PaymentType label: " + label);
     }
+    @JsonCreator
+    public static PaymentType fromLabelNullable(String label) {
+        for (PaymentType type : values()) {
+            if (type.label.equals(label)) {
+                return type;
+            }
+        }
+        return null;
+    }
 }
