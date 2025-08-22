@@ -51,7 +51,7 @@ public class EmployerService {
     }
 
     @Transactional
-    public EmployerDetailRes me(){
+    public EmployerDetailRes me() {
         //TODO: jwt token -> employer user find 작성
     }
 

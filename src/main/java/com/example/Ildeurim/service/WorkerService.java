@@ -43,13 +43,13 @@ public class WorkerService {
 
         // 4) Access 토큰 발급 (ROLE_WORKER 포함)
         String accessToken = jwtUtil.generateAccessToken(worker.getId(), UserType.WORKER, phone, 60);
-         long expEpochSec = jwtUtil.getExpiresAtEpochSeconds(accessToken);
+        long expEpochSec = jwtUtil.getExpiresAtEpochSeconds(accessToken);
 
         return new WorkerSignupRes(worker.getId(), accessToken, expEpochSec);
     }
 
     @Transactional
-    public WorkerDetailRes me(){
+    public WorkerDetailRes me() {
         //TODO: jwt token -> worker user find 작성
     }
 }

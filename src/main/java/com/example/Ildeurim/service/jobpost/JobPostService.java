@@ -1,4 +1,4 @@
-package com.example.Ildeurim.service;
+package com.example.Ildeurim.service.jobpost;
 
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.jobpost.JobPostDetailRes;

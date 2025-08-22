@@ -37,18 +37,14 @@ public class Job extends BaseEntity {
     @Column(columnDefinition = "json", nullable = true)
     private String contractCore; // 계약서 요약 JSON
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "jobId", nullable = false)
-//    private Job job;
+    @OneToOne
+    @JoinColumn(name = "applicationId", nullable = false)
+    private Application application;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workerId", nullable = false)
     @OnDelete(action= OnDeleteAction.CASCADE)
     private Worker worker;
-
-    @OneToOne
-    @JoinColumn(name = "applicationId", referencedColumnName = "id")
-    private Application application;
 
 
 }
