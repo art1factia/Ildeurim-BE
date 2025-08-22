@@ -18,7 +18,7 @@ import java.util.Set;
 
 @Mapper(
         config = CommonMapperConfig.class,
-        uses = {JobFieldMapper.class, ApplyMethodMapper.class, WorkDaysMapper.class, WorkPlaceMapper.class, EnumParsers.class}
+        uses = {JobFieldMapper.class, ApplyMethodMapper.class, WorkDaysMapper.class, WorkPlaceMapper.class}
 )
 public interface JobPostUpdateCmdMapper {
 

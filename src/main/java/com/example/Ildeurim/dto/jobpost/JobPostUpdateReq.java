@@ -26,4 +26,5 @@ public record JobPostUpdateReq (
         String employmentType,
         String workPlace
 ){
+
 }
