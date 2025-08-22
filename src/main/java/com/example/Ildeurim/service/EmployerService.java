@@ -91,7 +91,7 @@ public class EmployerService {
         Long id = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
         Employer employer = employerRepository.findById(id)
-                .get();
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found"));
         EmployerUpdateCmd cmd = employerUpdateCmdMapper.toCmd(req, jobFieldMapper);
         employer.update(cmd);
         employer = employerRepository.save(employer);

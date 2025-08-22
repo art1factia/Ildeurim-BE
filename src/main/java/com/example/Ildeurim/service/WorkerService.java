@@ -87,7 +87,7 @@ public class WorkerService {
         Long id = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
         Worker worker = workerRepository.findById(id)
-                .get();
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Worker not found"));
         WorkerUpdateCmd cmd = workerUpdateCmdMapper.toCmd(req, jobFieldMapper, workPlaceMapper);
         worker.update(cmd);
         worker = workerRepository.save(worker);
