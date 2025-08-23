@@ -18,4 +18,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             Long jobPostId,
             List<ApplicationStatus> statuses
     );
+
+    List<Application> findByJobPost_IdAndApplicationStatus(Long jobPostId, ApplicationStatus applicationStatus);
+
+    List<Application> findByJobPost_IdAndApplicationStatusNot(Long jobPostId, ApplicationStatus applicationStatus);
+
+    List<Application> findByJobPost_IdAndApplicationStatusIsNotAndApplicationStatusIsNot(Long jobPostId, ApplicationStatus applicationStatus, ApplicationStatus applicationStatus1);
 }

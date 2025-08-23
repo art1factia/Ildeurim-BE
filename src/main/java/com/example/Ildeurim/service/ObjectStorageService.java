@@ -78,7 +78,7 @@ public class ObjectStorageService {
                 .build(); // ★ ACL 절대 넣지 않기
 
         s3.putObject(reqq, RequestBody.fromString("ping"));
-        System.out.println("Put OK: " + keyy);
+//        System.out.println("Put OK: " + keyy);
 
 
         String key = "debug/ping-" + System.currentTimeMillis() + ".txt";

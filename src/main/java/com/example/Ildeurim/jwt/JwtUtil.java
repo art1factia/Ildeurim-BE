@@ -59,7 +59,7 @@ public class JwtUtil {
 
 
     public Jws<Claims> parse(String token) {
-        System.out.println("In parser: "+ Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token));
+//        System.out.println("In parser: "+ Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token));
         return Jwts.parser().verifyWith((SecretKey) key).build().parseSignedClaims(token);
     }
 

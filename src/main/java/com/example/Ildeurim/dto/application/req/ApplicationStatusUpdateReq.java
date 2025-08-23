@@ -9,7 +9,7 @@ public record ApplicationStatusUpdateReq(
 ) {
     public ApplicationStatus toApplicationStatus() {
         try {
-            return ApplicationStatus.valueOf(newStatus.toUpperCase());
+            return ApplicationStatus.fromLabel(newStatus);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 지원서 상태입니다: " + newStatus);
         }
