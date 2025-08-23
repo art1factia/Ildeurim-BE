@@ -72,13 +72,9 @@ public class JobPost extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
-    @ElementCollection
-    @CollectionTable(
-            name = "jobPostJobFields",
-            joinColumns = @JoinColumn(name = "jobPostId")
-    )
     @Enumerated(EnumType.STRING)
-    private Set<JobField> jobFields;
+    @Column(nullable = false)
+    private JobField jobField;
 
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
@@ -120,7 +116,7 @@ public class JobPost extends BaseEntity {
     private Set<ApplyMethod> applyMethod;
 
     @Column(nullable = false)
-    private Boolean isJobPostUsing=false;  //모집 공고를 계속 이용할건지
+    private Boolean saveQuestionList=false;  //모집 공고를 계속 이용할건지
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employerId", nullable = false)
@@ -130,7 +126,8 @@ public class JobPost extends BaseEntity {
     private Set<Application> applications; // 지원자 리스트
 
     @Convert(converter = QuestionListJsonConverter.class)
-    @Column(columnDefinition = "jsonb")
+//    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "text")
     private QuestionList questionList;
 
 
@@ -150,7 +147,7 @@ public class JobPost extends BaseEntity {
         cmd.careerRequirement().ifPresent(this::setCareerRequirement);
         cmd.educationRequirement().ifPresent(this::setEducationRequirement);
         cmd.employmentType().ifPresent(this::setEmploymentType);
-        cmd.jobFields().ifPresent(this::setJobFields);
+        cmd.jobField().ifPresent(this::setJobField);
         cmd.applyMethods().ifPresent(this::setApplyMethods);
         cmd.expiryDate().ifPresent(this::setExpiryDate);
         cmd.workPlace().ifPresent(this::setWorkPlace);

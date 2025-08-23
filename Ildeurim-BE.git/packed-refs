@@ -1,0 +1,19 @@
+# pack-refs with: peeled fully-peeled sorted 
+ab1cc5808100dc3eb472f7cee78b7bc33c2dc0cd refs/heads/hyeonseo
+c51141f081db48e6f33cbb60f1cac855f20d293c refs/heads/jio
+1b74775e5a1b34cb2d26869dbc07d20c8ce2ee81 refs/heads/main
+fc2e56a9184c3d03a38717cd5ca400fa838fd6e6 refs/heads/monji
+05eb2bb41d38f631df0f535aab5c160995e10aae refs/pull/1/head
+bfb5134401e5f725b2c24a7bbf0b69190769e510 refs/pull/10/head
+ff7b47fb1440315c38cb847edf852584d2f798f3 refs/pull/11/head
+5f5d666492343a508a55d468becbc4b17a41f5f5 refs/pull/12/head
+fc2e56a9184c3d03a38717cd5ca400fa838fd6e6 refs/pull/13/head
+5a8ec1bff80f872983cec024fa4522d881b63663 refs/pull/13/merge
+48253988d3234cb4b0689e6b8f18dc7e8d3d4742 refs/pull/2/head
+2ada874b7497a20fbc38d6f6076922203b195c4c refs/pull/3/head
+22aa9bec2bebb608b7ebddc7ef912c9e08140838 refs/pull/4/head
+9c636cb4e9be726b3498525944f3a0edcbb23dc6 refs/pull/5/head
+275a52b4b8f3df1f837e25e12d648ba99393f6c8 refs/pull/6/head
+10f3b58b4aecddad792cd3538b96ee5b19bf6d0c refs/pull/7/head
+7ec35f5e271921f13230b60230f9b691eab8739b refs/pull/8/head
+2ad70841d30f9405bb389936927db01bd847ebc4 refs/pull/9/head

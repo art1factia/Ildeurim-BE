@@ -1,5 +1,6 @@
 package com.example.Ildeurim.dto.worker;
 
+import com.example.Ildeurim.commons.converter.DateParsers;
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import com.example.Ildeurim.commons.enums.worker.Gender;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
@@ -14,9 +15,9 @@ import java.util.stream.Collectors;
 
 public record WorkerCreateReq(
         @NotBlank String name,
-        @NotBlank String phoneNumber,
-        @NotNull /*@Past*/ LocalDate birthday,   // 날짜 검증을 강화하려면 @Past 권장
-        @NotNull Gender gender,
+        @NotBlank @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$") String phoneNumber,
+        @NotNull String birthday,
+        @NotNull String gender,
         @NotBlank String residence,
         @NotBlank String RLG,
         @NotNull /*@NotEmpty @Size(min = 1)*/ Set<String> BLG,
@@ -25,9 +26,9 @@ public record WorkerCreateReq(
     public Worker toEntity() {
         return Worker.builder()
                 .name(name)
-                .birthday(birthday)
+                .birthday(DateParsers.parseLocalDate(birthday))
                 .phoneNumber(phoneNumber)
-                .gender(gender)
+                .gender(Gender.fromLabel(gender))
                 .residence(residence)
                 .RLG(RLG)
                 .BLG(BLG.stream().map(WorkPlace::fromLabel).collect(Collectors.toSet()))

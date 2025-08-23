@@ -44,7 +44,7 @@ public class EmployerService {
      */
     @Transactional
     public EmployerSignupRes signup(CustomPrincipal principal, EmployerCreateReq req) {
-        // 1) 토큰 검증: WORKER 가입인지 확인
+        // 1) 토큰 검증: Employer 가입인지 확인
         if (principal == null || principal.userType() != UserType.EMPLOYER ) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong user type for employer signup");
         }
@@ -61,7 +61,7 @@ public class EmployerService {
         employerRepository.save(employer);
 
         // 4) Access 토큰 발급 (ROLE_WORKER 포함)
-        String accessToken = jwtUtil.generateAccessToken(employer.getId(), UserType.WORKER, phone, 60);
+        String accessToken = jwtUtil.generateAccessToken(employer.getId(), UserType.EMPLOYER, phone, 60);
         long expEpochSec = jwtUtil.getExpiresAtEpochSeconds(accessToken);
 
         return new EmployerSignupRes(employer.getId(), accessToken, expEpochSec);
@@ -91,7 +91,7 @@ public class EmployerService {
         Long id = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
         Employer employer = employerRepository.findById(id)
-                .get();
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found"));
         EmployerUpdateCmd cmd = employerUpdateCmdMapper.toCmd(req, jobFieldMapper);
         employer.update(cmd);
         employer = employerRepository.save(employer);

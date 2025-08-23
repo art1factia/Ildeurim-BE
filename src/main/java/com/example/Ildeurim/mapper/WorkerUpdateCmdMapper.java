@@ -3,32 +3,34 @@ package com.example.Ildeurim.mapper;
 import com.example.Ildeurim.command.WorkerUpdateCmd;
 import com.example.Ildeurim.commons.CommonMapperConfig;
 import com.example.Ildeurim.dto.worker.WorkerUpdateReq;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
-@Mapper(config = CommonMapperConfig.class, uses = {JobFieldMapper.class, WorkPlaceMapper.class})
+@Mapper(config = CommonMapperConfig.class, uses = {JobFieldMapper.class, WorkPlaceMapper.class, DateMapper.class})
 public interface WorkerUpdateCmdMapper {
-    @org.mapstruct.Named("trimToNull")
+    @Named("trimToNull")
     public static String trimToNull(String s) {
         if (s == null) return null;
         String t = s.trim();
         return t.isEmpty() ? null : t;
     }
 
-    @org.mapstruct.Mapping(target = "name",
+    @Mapping(target = "name",
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.name())))")
-    @org.mapstruct.Mapping(target = "phoneNumber",
+    @Mapping(target = "phoneNumber",
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.phoneNumber())))")
-    @org.mapstruct.Mapping(target = "birthday",
-            expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.birthday())))")
-    @org.mapstruct.Mapping(target = "gender",
-            expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.gender())))")
-    @org.mapstruct.Mapping(target = "residence",
+    @Mapping(target = "birthday", qualifiedByName = "optLocalDate", source = "birthday")
+    @Mapping(target = "gender",
+            expression = "java(java.util.Optional.ofNullable( Gender.fromLabelNullable(src.gender()) ))")
+    @Mapping(target = "residence",
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.residence())))")
-    @org.mapstruct.Mapping(target = "RLG",
+    @Mapping(target = "RLG",
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.RLG())))")
-    @org.mapstruct.Mapping(target = "BLG",
-            expression = "java(java.util.Optional.ofNullable(workPlaceMapper.toWorkPlaceSet(src.BLG())))")
-    @org.mapstruct.Mapping(target = "jobInterest",
-            expression = "java(java.util.Optional.ofNullable(jobFieldMapper.toJobFieldSet(src.jobInterest())))")
-    WorkerUpdateCmd toCmd(WorkerUpdateReq src, @org.mapstruct.Context JobFieldMapper jobFieldMapper,WorkPlaceMapper workPlaceMapper);
+    @Mapping(target = "BLG",
+            expression = "java(java.util.Optional.ofNullable(workPlaceMapper.toWorkPlaceSet( src.BLG() )))")
+    @Mapping(target = "jobInterest",
+            expression = "java(java.util.Optional.ofNullable(jobFieldMapper.toJobFieldSet( src.jobInterest())))")
+    WorkerUpdateCmd toCmd(WorkerUpdateReq src, @Context JobFieldMapper jobFieldMapper, @Context WorkPlaceMapper workPlaceMapper, @Context DateMapper dateMapper);
 }

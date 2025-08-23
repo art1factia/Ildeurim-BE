@@ -21,24 +21,25 @@ public class JobPostController {
         JobPostRes res = jobPostService.create(req);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post created", res));
     }
+
     @GetMapping
     public ResponseEntity<ApiResponse> getJobPostList(@RequestBody JobPostFilter req) {
         List<SimpleJobPostRes> res = jobPostService.getJobPostList(req);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post list", res));
     }
-    @GetMapping("{/id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getJobPost(@PathVariable long id) {
         JobPostDetailRes res = jobPostService.getJobPost(id);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post", res));
     }
 
-    @PatchMapping("{/id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse> updateJobPost(@PathVariable long id, @RequestBody JobPostUpdateReq req) {
         JobPostRes res = jobPostService.update(id, req);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post updated", res));
     }
 
-    @PatchMapping("{/id}")
+    @PatchMapping("/{id}/end")
     public ResponseEntity<ApiResponse> endJobPost(@PathVariable long id) {
         jobPostService.end(id);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post ended", null));

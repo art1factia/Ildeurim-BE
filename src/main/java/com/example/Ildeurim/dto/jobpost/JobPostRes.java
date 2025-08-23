@@ -1,13 +1,11 @@
 package com.example.Ildeurim.dto.jobpost;
 
 import com.example.Ildeurim.commons.enums.jobpost.*;
-import com.example.Ildeurim.domain.Employer;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.JobPost;
-import com.example.Ildeurim.dto.employer.EmployerRes;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Set;
 
 public record JobPostRes(
@@ -22,17 +20,21 @@ public record JobPostRes(
         Integer restTime,
         WorkType workType,
         Set<WorkDays> workDays,
-        Integer workNumber,
+        Integer workDaysCount,
         Boolean careerRequirement,
         Set<ApplyMethod> applyMethods,
-        Set<JobField> jobFields,
+        JobField jobField,
         LocalDateTime startDate,
         LocalDateTime expiryDate,
         JobPostStatus status,
         LocalTime workStartTime,
         LocalTime workEndTime,
         EducationRequirement educationRequirement,
-        EmploymentType employmentType
+        EmploymentType employmentType,
+        Boolean saveQuestionList,
+        WorkPlace workPlace,
+        Long employerId,
+        String employerName
 ) {
     public static JobPostRes from(JobPost j) {
         return new JobPostRes(
@@ -50,14 +52,18 @@ public record JobPostRes(
                 j.getWorkDaysCount(),
                 j.getCareerRequirement(),
                 j.getApplyMethods(),
-                j.getJobFields(),
+                j.getJobField(),
                 j.getStartDate(),
                 j.getExpiryDate(),
                 j.getStatus(),
                 j.getWorkStartTime(),
                 j.getWorkEndTime(),
                 j.getEducationRequirement(),
-                j.getEmploymentType()
+                j.getEmploymentType(),
+                j.getSaveQuestionList(),
+                j.getWorkPlace(),
+                j.getEmployer().getId(),
+                j.getEmployer().getName()
 
         );
     }

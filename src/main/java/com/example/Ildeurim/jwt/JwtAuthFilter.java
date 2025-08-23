@@ -37,22 +37,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
                                     FilterChain chain) throws ServletException, IOException {
-        String auth = req.getHeader("Authorization");
+        String auth = req.getHeader("token");
+        System.out.println(auth);
 
-        if (auth != null && auth.startsWith("Bearer ")) {
-            String token = auth.substring(7);
+        if (auth != null) {
+            String token = auth;
             try {
-                var jws   = jwtUtil.parse(token);
+                var jws = jwtUtil.parse(token);
+                System.out.println("jws:" + jws);
                 var scope = jwtUtil.getScope(jws); // "access" | "signup" (기타 값은 무시)
+                System.out.println("scope:" + scope);
 
                 if ("access".equals(scope)) {
-                    Long userId        = jwtUtil.getUserId(jws);
-                    var userType       = jwtUtil.getUserType(jws);
-                    String phone       = jwtUtil.getPhone(jws);
+                    Long userId = jwtUtil.getUserId(jws);
+                    var userType = jwtUtil.getUserType(jws);
+                    String phone = jwtUtil.getPhone(jws);
 
                     // 존재 확인 (isActive 없으면 existsById로 충분)
                     boolean exists = switch (userType) {
-                        case WORKER   -> workerRepository.existsById(userId);
+                        case WORKER -> workerRepository.existsById(userId);
                         case EMPLOYER -> employerRepository.existsById(userId);
                     };
                     if (!exists) {
@@ -61,15 +64,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     }
 
                     // ROLE_* 부여
-                    var principal   = new CustomPrincipal(userId, userType, phone, scope);
+                    var principal = new CustomPrincipal(userId, userType, phone, scope);
                     var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + userType.name()));
                     seJtAuth(principal, authorities, req);
 
                 } else if ("signup".equals(scope)) {
                     // 가입 단계: ROLE 없이 가입 범위 권한만 부여
-                    var principal   = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws), scope);
+                    var principal = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws), scope);
                     var authorities = List.of(new SimpleGrantedAuthority("SCOPE_signup"));
                     seJtAuth(principal, authorities, req);
+                    System.out.println(jwtUtil.getScope(jws));
                 }
                 // 그 외 scope는 인증 미설정(익명으로 통과)
             } catch (Exception e) {
@@ -83,8 +87,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void seJtAuth(CustomPrincipal principal,
-                         List<? extends GrantedAuthority> authorities,
-                         HttpServletRequest req) {
+                          List<? extends GrantedAuthority> authorities,
+                          HttpServletRequest req) {
         var authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));

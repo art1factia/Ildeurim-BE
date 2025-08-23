@@ -7,6 +7,7 @@ import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.commons.enums.worker.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -39,10 +40,10 @@ public class Worker extends BaseEntity {
 
     @Column(nullable = false)
     @NotBlank
+    @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$")
     private String phoneNumber; // 연락처
 
     @Column(nullable = false)
-    @NotBlank
     private LocalDate birthday;
 
     @Enumerated(EnumType.STRING)

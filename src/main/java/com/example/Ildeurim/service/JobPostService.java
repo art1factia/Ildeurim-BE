@@ -27,6 +27,7 @@ public class JobPostService {
     private final ApplyMethodMapper applyMethodMapper;
     private final WorkDaysMapper workDaysMapper;
     private final WorkPlaceMapper workPlaceMapper;
+    private final DateMapper dateMapper;
 
     //공지글 전체 조회
     @Transactional(readOnly = true)
@@ -79,7 +80,7 @@ public class JobPostService {
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
         if (!isMine) throw new AccessDeniedException("no access to update job post");
         //TODO: Cmd, Mapper 만들고 update와 연결
-        JobPostUpdateCmd cmd = jobPostUpdateCmdMapper.toCmd(req, jobFieldMapper, applyMethodMapper, workDaysMapper, workPlaceMapper);
+        JobPostUpdateCmd cmd = jobPostUpdateCmdMapper.toCmd(req, jobFieldMapper, applyMethodMapper, workDaysMapper, workPlaceMapper, dateMapper);
         jobPost.update(cmd);
         jobPost = jobPostRepository.save(jobPost);
         return JobPostRes.from(jobPost);

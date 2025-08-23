@@ -1,6 +1,8 @@
 package com.example.Ildeurim.dto.jobpost;
 
+import com.example.Ildeurim.commons.converter.DateParsers;
 import com.example.Ildeurim.commons.enums.jobpost.*;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.JobPost;
 import org.hibernate.jdbc.Work;
 
@@ -21,14 +23,16 @@ public record JobPostCreateReq(
         Integer workNumber,
         Boolean careerRequirement,
         List<String> applyMethods,
-        List<String> jobFields,
-        LocalDateTime startDate,
-        LocalDateTime expiryDate,
+        String jobField,
+        String startDate,
+        String expiryDate,
         String status,
-        LocalTime workStartTime,
-        LocalTime workEndTime,
+        String workStartTime,
+        String workEndTime,
         String educationRequirement,
-        String employmentType
+        String employmentType,
+        Boolean saveQuestionList,
+        String workPlace
 ) {
     public JobPost toEntity() {
         return JobPost.builder()
@@ -43,18 +47,21 @@ public record JobPostCreateReq(
                 .workDaysCount(workNumber)
                 .careerRequirement(careerRequirement)
                 .applyMethods(applyMethods.stream().map(ApplyMethod::fromLabel).collect(Collectors.toSet()))
-                .jobFields(jobFields.stream().map(JobField::fromLabel).collect(Collectors.toSet()))
+                .jobField(JobField.fromLabel(jobField))
 
-                .startDate(startDate) //TODO: LocalDateTime 형변환
-                .expiryDate(expiryDate) //TODO: LocalDateTime 형변환
+                .startDate(DateParsers.parseLocalDateTime(startDate)) //TODO: LocalDateTime 형변환
+                .expiryDate(DateParsers.parseLocalDateTime(expiryDate)) //TODO: LocalDateTime 형변환
 
                 .status(JobPostStatus.fromLabel(status))
 
-                .workStartTime(workStartTime)//TODO: LocalTime 형변환
+                .workStartTime(DateParsers.parseLocalTime(workStartTime))//TODO: LocalTime 형변환
 
-                .workEndTime(workEndTime)
+                .workEndTime(DateParsers.parseLocalTime(workEndTime))
                 .educationRequirement(EducationRequirement.fromLabel(educationRequirement))
                 .employmentType(EmploymentType.fromLabel(employmentType))
+                .saveQuestionList(saveQuestionList)
+                .workPlace(WorkPlace.fromLabel(workPlace))
                 .build();
+
     }
 }

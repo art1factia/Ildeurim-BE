@@ -35,7 +35,7 @@ public class JobPostDetailRes {
     private Boolean careerRequirement; //경력
     private EducationRequirement educationRequirement; // 학력
     private EmploymentType employmentType;
-    private Set<JobField> jobFields;
+    private JobField jobField;
 
     private Set<ApplyMethod> applyMethods; // 지원 방법 (간편지원, 전화, 이메일 등)
 
@@ -64,7 +64,7 @@ public class JobPostDetailRes {
                 .careerRequirement(jobPost.getCareerRequirement())
                 .educationRequirement(jobPost.getEducationRequirement())
                 .employmentType(jobPost.getEmploymentType())
-                .jobFields(jobPost.getJobFields())
+                .jobField(jobPost.getJobField())
                 .applyMethods(jobPost.getApplyMethods())
                 .expiryDate(jobPost.getExpiryDate())
                 .employerName(jobPost.getEmployer().getName())

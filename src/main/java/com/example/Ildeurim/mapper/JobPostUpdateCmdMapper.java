@@ -18,7 +18,11 @@ import java.util.Set;
 
 @Mapper(
         config = CommonMapperConfig.class,
-        uses = {JobFieldMapper.class, ApplyMethodMapper.class, WorkDaysMapper.class, WorkPlaceMapper.class}
+        uses = {JobFieldMapper.class,
+                ApplyMethodMapper.class,
+                WorkDaysMapper.class,
+                WorkPlaceMapper.class,
+                DateMapper.class}
 )
 public interface JobPostUpdateCmdMapper {
 
@@ -29,14 +33,18 @@ public interface JobPostUpdateCmdMapper {
     }
 
 
-    @Mapping(target = "title", qualifiedByName = "opt", source = "title")
+    @Mapping(target = "title",
+            expression = "java(java.util.Optional.ofNullable(src.title()))")
     @Mapping(target = "paymentType",
             expression = "java(java.util.Optional.ofNullable( PaymentType.fromLabelNullable(src.paymentType()) ))")
-    @Mapping(target = "payment", qualifiedByName = "opt", source = "payment")
-    @Mapping(target = "location", qualifiedByName = "opt", source = "location")
-    @Mapping(target = "content", qualifiedByName = "opt", source = "content")
-    @Mapping(target = "workStartTime", qualifiedByName = "opt", source = "workStartTime")
-    @Mapping(target = "workEndTime", qualifiedByName = "opt", source = "workEndTime")
+    @Mapping(target = "payment",
+            expression = "java(java.util.Optional.ofNullable(src.payment()))")
+    @Mapping(target = "location",
+            expression = "java(java.util.Optional.ofNullable(src.location()))")
+    @Mapping(target = "content",
+            expression = "java(java.util.Optional.ofNullable(src.content()))")
+    @Mapping(target = "workStartTime", qualifiedByName = "optLocalTime", source = "workStartTime")
+    @Mapping(target = "workEndTime", qualifiedByName = "optLocalTime", source = "workEndTime")
     @Mapping(target = "workType",
             expression = "java(java.util.Optional.ofNullable( WorkType.fromLabelNullable(src.workType()) ))")
     @Mapping(target = "workDays",
@@ -49,17 +57,18 @@ public interface JobPostUpdateCmdMapper {
             expression = "java(java.util.Optional.ofNullable( EducationRequirement.fromLabelNullable(src.educationRequirement()) ))")
     @Mapping(target = "employmentType",
             expression = "java(java.util.Optional.ofNullable( EmploymentType.fromLabelNullable(src.employmentType()) ))")
-    @Mapping(target = "jobFields",
-            expression = "java(java.util.Optional.ofNullable(jobFieldMapper.toJobFieldMapper(src.jobFields())))")
+    @Mapping(target = "jobField",
+            expression = "java(java.util.Optional.ofNullable( JobField.fromLabelNullable(src.jobField())))")
     @Mapping(target = "applyMethods",
             expression = "java(java.util.Optional.ofNullable(applyMethodMapper.toApplyMethodSet(src.applyMethods())))")
-    @Mapping(target = "expiryDate",
-            expression = "java(java.util.Optional.ofNullable(src.expiryDate()))")
+    @Mapping(target = "startDate", qualifiedByName = "optLocalDateTime", source = "startDate")
+    @Mapping(target = "expiryDate", qualifiedByName = "optLocalDateTime", source = "expiryDate")
     @Mapping(target = "workPlace",
             expression = "java(java.util.Optional.ofNullable( WorkPlace.fromLabelNullable(src.workPlace()) ))")
     JobPostUpdateCmd toCmd(JobPostUpdateReq src,
                            @Context JobFieldMapper jobFieldMapper,
                            @Context ApplyMethodMapper applyMethodMapper,
                            @Context WorkDaysMapper workDaysMapper,
-                           @Context WorkPlaceMapper workPlaceMapper);
+                           @Context WorkPlaceMapper workPlaceMapper,
+                           @Context DateMapper dateMapper);
 }

@@ -24,7 +24,7 @@ public class SimpleJobPostRes {
     private String location;                      // 위치 (세부 주소)
     private Set<ApplyMethod> applyMethods;       // 지원 방법 (간편지원, 전화지원 등)
     private LocalDateTime expiryDate;             // 채용 마감 기한
-    private Set<JobField> jobFields;             // 구직 분야
+    private JobField jobField;             // 구직 분야
     private JobPostStatus status;
 
     public static SimpleJobPostRes of(JobPost jobPost)
@@ -34,7 +34,7 @@ public class SimpleJobPostRes {
             .companyName(jobPost.getEmployer().getCompanyName())
             .applyMethods(jobPost.getApplyMethods())
             .location(jobPost.getLocation())
-            .jobFields(jobPost.getJobFields())
+            .jobField(jobPost.getJobField())
             .expiryDate(jobPost.getExpiryDate())
             .status(jobPost.getStatus())
             .build();
