@@ -31,7 +31,7 @@ public class ApplicationController {
     /*초안 생성*/
     @PostMapping("/{jobPostId}/apply")
     public ResponseEntity<ApiResponse> createApplication(@PathVariable Long jobPostId, @RequestBody @Valid ApplicationCreateReq req) {
-        Long applicationId = applicationService.createApplication(req);
+        Long applicationId = applicationService.createApplication(req, jobPostId);
         Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
 
         ApiResponse<Map<String, Long>> apiResponse = new ApiResponse<>(
@@ -43,9 +43,9 @@ public class ApplicationController {
 
     /*임시 저장,수정*/
     @PatchMapping("/{id}/answers")
-    public ResponseEntity<ApiResponse> addAnswerToApplication(@PathVariable Long applicationId, @RequestBody ApplicationAnswerUpdateReq req) {
-        applicationService.addAnswerToApplication(applicationId, req);
-        Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
+    public ResponseEntity<ApiResponse> addAnswerToApplication(@PathVariable Long id, @RequestBody ApplicationAnswerUpdateReq req) {
+        applicationService.addAnswerToApplication(id, req);
+        Map<String, Long> data = Collections.singletonMap("applicationId", id);
 
         ApiResponse<Map<String, Long>> apiResponse = new ApiResponse<>(
                 true, HttpStatus.OK.value(), "답변이 성공적으로 임시 저장되었습니다.", data
@@ -55,11 +55,11 @@ public class ApplicationController {
 
 
     /*최종 지원서 제출*/
-    @PostMapping("/{id}/submit")
+    @PatchMapping("/{id}/submit")
     public ResponseEntity<ApiResponse> submitApplication(
-            @PathVariable Long applictionId
+            @PathVariable Long id
     ) {
-        ApplicationRes res = applicationService.submitApplication(applictionId);
+        ApplicationRes res = applicationService.submitApplication(id);
 
         ApiResponse<ApplicationRes> apiResponse = new ApiResponse<>(
                 true, HttpStatus.OK.value(), "지원서가 성공적으로 제출되었습니다.", res
@@ -81,8 +81,8 @@ public class ApplicationController {
 
     /*지원서 삭제*/
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteApplication(@PathVariable Long applicationId) {
-        applicationService.deleteApplication(applicationId);
+    public ResponseEntity<ApiResponse<Void>> deleteApplication(@PathVariable Long id) {
+        applicationService.deleteApplication(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 new ApiResponse<>(true, HttpStatus.OK.value(), "지원서가 성공적으로 삭제되었습니다.")
@@ -90,13 +90,12 @@ public class ApplicationController {
     }
 
     /*--------------------- 전화 지원 추가 관련 컨트롤러---------------------*/
-    @PostMapping("/phoneApply")
-    public ResponseEntity<ApiResponse> phoneApply(@RequestBody PhoneApplicationReq req) {
-        Long applicationId = applicationService.createPhoneApplication(req);
-        Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
-
+    @PostMapping("/{jobPostId}/phoneApply")
+    public ResponseEntity<ApiResponse> phoneApply(@PathVariable long jobPostId) {
+        ApplicationRes res = applicationService.createPhoneApplication(jobPostId);
+//        Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ApiResponse<>(true, HttpStatus.CREATED.value(), "전화 지원이 성공적으로 처리되었습니다.", data)
+                new ApiResponse<>(true, HttpStatus.CREATED.value(), "전화 지원이 성공적으로 처리되었습니다.", res)
         );
     }
 
@@ -129,11 +128,11 @@ public class ApplicationController {
     /*지원 상태 변화*/
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse> updateApplicationStatus(
-            @PathVariable Long applicationId,
+            @PathVariable Long id,
             @RequestBody ApplicationStatusUpdateReq req
     ) {
 
-        applicationService.updateApplicationStatus(applicationId, req.toApplicationStatus());
+        applicationService.updateApplicationStatus(id, req.toApplicationStatus());
 
         return ResponseEntity.ok(
                 new ApiResponse<>(true, HttpStatus.OK.value(), "지원서 상태 변경 성공")
@@ -142,8 +141,8 @@ public class ApplicationController {
 
     /*상세 이력서 홛인*/
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse> getApplicationDetails(@PathVariable Long applicationId) {
-        ApplicationDetailRes res = applicationService.getApplicationDetails(applicationId);
+    public ResponseEntity<ApiResponse> getApplicationDetails(@PathVariable Long id) {
+        ApplicationDetailRes res = applicationService.getApplicationDetails(id);
 
         ApiResponse<ApplicationDetailRes> apiResponse = new ApiResponse<>(
                 true, HttpStatus.OK.value(), "지원서 상세 조회 성공", res

@@ -38,15 +38,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse res,
                                     FilterChain chain) throws ServletException, IOException {
         String auth = req.getHeader("token");
-        System.out.println(auth);
+//        System.out.println(auth);
 
         if (auth != null) {
             String token = auth;
             try {
                 var jws = jwtUtil.parse(token);
-                System.out.println("jws:" + jws);
+//                System.out.println("jws:" + jws);
                 var scope = jwtUtil.getScope(jws); // "access" | "signup" (기타 값은 무시)
-                System.out.println("scope:" + scope);
+//                System.out.println("scope:" + scope);
 
                 if ("access".equals(scope)) {
                     Long userId = jwtUtil.getUserId(jws);
@@ -73,7 +73,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var principal = new CustomPrincipal(null, jwtUtil.getUserType(jws), jwtUtil.getPhone(jws), scope);
                     var authorities = List.of(new SimpleGrantedAuthority("SCOPE_signup"));
                     seJtAuth(principal, authorities, req);
-                    System.out.println(jwtUtil.getScope(jws));
+//                    System.out.println(jwtUtil.getScope(jws));
                 }
                 // 그 외 scope는 인증 미설정(익명으로 통과)
             } catch (Exception e) {

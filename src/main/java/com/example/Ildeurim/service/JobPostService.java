@@ -2,11 +2,14 @@ package com.example.Ildeurim.service;
 
 import com.example.Ildeurim.auth.AuthContext;
 import com.example.Ildeurim.command.JobPostUpdateCmd;
+import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
 import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
+import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Employer;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.jobpost.*;
 import com.example.Ildeurim.mapper.*;
+import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.JobPostRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,6 +31,7 @@ public class JobPostService {
     private final WorkDaysMapper workDaysMapper;
     private final WorkPlaceMapper workPlaceMapper;
     private final DateMapper dateMapper;
+    private final ApplicationRepository applicationRepository;
 
     //공지글 전체 조회
     @Transactional(readOnly = true)
@@ -95,10 +99,27 @@ public class JobPostService {
                 .orElseThrow(() -> new AccessDeniedException("user is not employer"));
         JobPost jobPost = jobPostRepository.findById(id)
                 .orElseThrow(()-> new EntityNotFoundException("jobPost not found"));
+        List<Application> applications = applicationRepository.findByJobPost_IdAndApplicationStatusIsNotAndApplicationStatusIsNot(id, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED);
+        applications.forEach(application -> {application.setApplicationStatus(ApplicationStatus.REJECTED);});
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
         if (!isMine) throw new AccessDeniedException("no access to update job post");
         jobPost.setStatus(JobPostStatus.CLOSE);
         jobPost = jobPostRepository.save(jobPost);
+    }
+
+    @Transactional
+    public JobPostRes updateQuestionList(long id, JobPostQuestionListUpdateReq req){
+        Long userId = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+        Employer employer = employerRepository.findById(userId)
+                .orElseThrow(() -> new AccessDeniedException("user is not employer"));
+        JobPost jobPost = jobPostRepository.findById(id)
+                .orElseThrow(()-> new EntityNotFoundException("jobPost not found"));
+        boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
+        if (!isMine) throw new AccessDeniedException("no access to update job post");
+        jobPost.setQuestionList(JobPostQuestionListUpdateReq.toQuestionList(req));
+        jobPost = jobPostRepository.save(jobPost);
+        return JobPostRes.from(jobPost);
     }
 
 

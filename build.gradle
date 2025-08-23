@@ -27,6 +27,10 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.32.29"))
 	implementation("software.amazon.awssdk:s3")
 
+	// DB
+	implementation 'org.flywaydb:flyway-core'
+	runtimeOnly 'org.postgresql:postgresql'
+
 	// JWT (JJWT)
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.5'

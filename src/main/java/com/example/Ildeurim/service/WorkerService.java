@@ -43,14 +43,14 @@ public class WorkerService {
      */
     @Transactional
     public WorkerSignupRes signup(CustomPrincipal principal, WorkerCreateReq req) {
-        System.out.println(principal);
+//        System.out.println(principal);
         // 1) 토큰 검증: WORKER 가입인지 확인
         if (principal == null || principal.userType() != UserType.WORKER) {
-            System.out.println(principal);
+//            System.out.println(principal);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong user type for worker signup");
         }
         if (!principal.scope().equals("signup")) {
-            System.out.println(principal);
+//            System.out.println(principal);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token scope is not in signup");
         }
 
