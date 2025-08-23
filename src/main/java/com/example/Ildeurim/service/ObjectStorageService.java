@@ -37,13 +37,12 @@ public class ObjectStorageService {
         String ext = resolveExt(file, contentType); // jpg/png/webp 등
         String key = "workers/%d/profile-%d-%s.%s"
                 .formatted(workerId, Instant.now().toEpochMilli(), shortId(), ext);
-
         // 업로드 (공개 읽기)
         PutObjectRequest req = PutObjectRequest.builder()
                 .bucket(props.getBucket())
                 .key(key)
                 .contentType(contentType)
-//                .acl(ObjectCannedACL.PUBLIC_READ)
+                .acl(ObjectCannedACL.PUBLIC_READ)
                 .build();
 
         try {
@@ -69,13 +68,25 @@ public class ObjectStorageService {
             throw new IllegalArgumentException("허용되지 않는 이미지 형식입니다. (jpeg/png/webp)");
     }
 
+    // ObjectStorageService.java
     public String putPingObject() {
+        String keyy = "debug/ping-" + System.currentTimeMillis() + ".txt";
+        PutObjectRequest reqq = PutObjectRequest.builder()
+                .bucket(props.getBucket())
+                .key(keyy)
+                .contentType("text/plain")
+                .build(); // ★ ACL 절대 넣지 않기
+
+        s3.putObject(reqq, RequestBody.fromString("ping"));
+        System.out.println("Put OK: " + keyy);
+
+
         String key = "debug/ping-" + System.currentTimeMillis() + ".txt";
         PutObjectRequest req = PutObjectRequest.builder()
                 .bucket(props.getBucket())
                 .key(key)
                 .contentType("text/plain")
-                // .acl(ObjectCannedACL.PUBLIC_READ)  <-- 절대 넣지 않음!
+                 .acl(ObjectCannedACL.PUBLIC_READ)
                 .build();
         s3.putObject(req, RequestBody.fromString("ping"));
         return key;

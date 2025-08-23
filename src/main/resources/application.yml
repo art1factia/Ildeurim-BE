@@ -39,7 +39,7 @@ ncp:
     region: kr-standard
     endpoint: https://kr.object.ncloudstorage.com
     bucket: ildeurim-storage
-  access-key: ncp_iam_BPAMKR24gGkLp7rfElxq
-  secret-key: ncp_iam_BPKMKR8pB0og0PrVp84IBAfnTtVKBpxvMk
+    access-key: ncp_iam_BPAMKR24gGkLp7rfElxq
+    secret-key: ncp_iam_BPKMKR8pB0og0PrVp84IBAfnTtVKBpxvMk
 
 

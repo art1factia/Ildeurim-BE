@@ -18,9 +18,9 @@ public class NcpObjectStorageConfig {
     private String endpoint;        // NCP Object Storage 엔드포인트
     @Value("${ncp.storage.region:kr-standard}")
     private String region;          // NCP 리전(보통 kr-standard)
-    @Value("${ncp.access-key}")     // NCP 콘솔의 Access Key
+    @Value("${ncp.storage.access-key}")     // NCP 콘솔의 Access Key
     private String accessKey;
-    @Value("${ncp.secret-key}")     // NCP 콘솔의 Secret Key
+    @Value("${ncp.storage.secret-key}")     // NCP 콘솔의 Secret Key
     private String secretKey;
 
     @Bean
@@ -28,15 +28,14 @@ public class NcpObjectStorageConfig {
         return S3Client.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
-                .serviceConfiguration(
-                        S3Configuration.builder()
-                                .pathStyleAccessEnabled(true) // NCP/커스텀 엔드포인트에 안전
-                                .build()
-                )
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true)
+                        .chunkedEncodingEnabled(false)   // 호환성 이슈 회피
+                        .build())
                 .credentialsProvider(
-                        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey))
-                )
+                        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
                 .build();
     }
+
 }
 
