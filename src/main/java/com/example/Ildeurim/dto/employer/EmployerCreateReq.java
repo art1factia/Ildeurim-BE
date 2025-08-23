@@ -14,10 +14,7 @@ public record EmployerCreateReq(
     @Email
     @NotBlank String email,
     @NotBlank String bossName,
-    @NotBlank @Pattern(
-            regexp = "^(01[016789]-\\d{3,4}-\\d{4}|02-\\d{3,4}-\\d{4}|0[3-9]{1}-\\d{3,4}-\\d{4})$",
-            message = "전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678, 02-123-4567"
-    ) String phoneNumber,
+    @NotBlank @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$") String phoneNumber,
     @NotBlank String companyName,
     @NotBlank String companyLocation,
     @NotBlank @Pattern(

@@ -23,7 +23,7 @@ public record JobPostUpdateCmd(
         Optional<Boolean> careerRequirement,
         Optional<EducationRequirement> educationRequirement,
         Optional<EmploymentType> employmentType,
-        Optional<Set<JobField>> jobFields,
+        Optional<JobField> jobField,
         Optional<Set<ApplyMethod>> applyMethods,
         Optional<LocalDateTime> expiryDate,
         Optional<WorkPlace> workPlace

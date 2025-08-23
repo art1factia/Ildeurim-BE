@@ -1,5 +1,6 @@
 package com.example.Ildeurim.commons.enums.worker;
 
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -50,6 +51,15 @@ public enum WorkPlace {
             }
         }
         throw new IllegalArgumentException("Unknown PaymentType label: " + label);
+    }
+    @JsonCreator
+    public static WorkPlace fromLabelNullable(String label) {
+        for (WorkPlace place : values()) {
+            if (place.label.equals(label)) {
+                return place;
+            }
+        }
+        return null;
     }
 }
 

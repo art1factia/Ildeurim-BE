@@ -43,10 +43,7 @@ public class Employer extends BaseEntity {
     private String bossName;
 
     @Column(nullable = false, unique = true)
-    @Pattern(
-            regexp = "^(01[016789]-\\d{3,4}-\\d{4}|02-\\d{3,4}-\\d{4}|0[3-9]{1}-\\d{3,4}-\\d{4})$",
-            message = "전화번호 형식이 올바르지 않습니다. 예: 010-1234-5678, 02-123-4567"
-    )
+    @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$")
     private String phoneNumber;
 
     @Column(nullable = false)
@@ -77,7 +74,8 @@ public class Employer extends BaseEntity {
     private List<JobPost> jobPosts = new ArrayList<>();
 
     @Convert(converter = QuestionListJsonConverter.class)
-    @Column(columnDefinition = "jsonb") // PostgreSQL이면 jsonb 추천
+//  @Column(columnDefinition = "jsonb") // PostgreSQL이면 jsonb 추천
+    @Column(columnDefinition = "text")
     private QuestionList defaultQuestionList; // 기본 질문 세트
 
     @OneToMany(mappedBy = "employer")

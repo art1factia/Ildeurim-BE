@@ -49,8 +49,8 @@ public interface JobPostUpdateCmdMapper {
             expression = "java(java.util.Optional.ofNullable( EducationRequirement.fromLabelNullable(src.educationRequirement()) ))")
     @Mapping(target = "employmentType",
             expression = "java(java.util.Optional.ofNullable( EmploymentType.fromLabelNullable(src.employmentType()) ))")
-    @Mapping(target = "jobFields",
-            expression = "java(java.util.Optional.ofNullable(jobFieldMapper.toJobFieldMapper(src.jobFields())))")
+    @Mapping(target = "jobField",
+            expression = "java(java.util.Optional.ofNullable( JobField.fromLabelNullable(src.jobField())))")
     @Mapping(target = "applyMethods",
             expression = "java(java.util.Optional.ofNullable(applyMethodMapper.toApplyMethodSet(src.applyMethods())))")
     @Mapping(target = "expiryDate",

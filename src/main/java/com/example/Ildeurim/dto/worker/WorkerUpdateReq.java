@@ -5,16 +5,17 @@ import com.example.Ildeurim.commons.enums.worker.Gender;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 public record WorkerUpdateReq(
         String name,
         String phoneNumber,
         String birthday,
-        Gender gender,
+        String gender,
         String residence,
         String RLG,
-        Set<String> BLG,
-        Set<String> jobInterest
+        List<String> BLG,
+        List<String> jobInterest
 ) {
 }

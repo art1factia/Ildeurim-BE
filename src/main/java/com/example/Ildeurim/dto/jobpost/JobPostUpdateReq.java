@@ -16,7 +16,7 @@ public record JobPostUpdateReq (
         Integer workDaysCount,
         Boolean careerRequirement,
         List<String> applyMethods,
-        List<String> jobFields,
+        String jobField,
         LocalDateTime startDate,
         LocalDateTime expiryDate,
         String status,

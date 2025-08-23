@@ -25,5 +25,14 @@ spring:
 server:
   port: 8080
 
+jwt:
+  secret: 74cfca89441baaaac6df4fdf35891f11d0918c002b60ff6d13672ddcc0e00042
+  expMin: 60
+
+twilio:
+  auth-token: 372956d9c40e609e3301b6993636d0c6
+  verify-service-sid: VA04a90416fc1dcb7292cd76083c5083dd
+  account-sid: AC97a71daa1aef6c84827925a485110e15
+
 
 

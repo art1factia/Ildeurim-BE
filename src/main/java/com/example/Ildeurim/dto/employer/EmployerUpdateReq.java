@@ -1,5 +1,6 @@
 package com.example.Ildeurim.dto.employer;
 
+import java.util.List;
 import java.util.Set;
 
 public record EmployerUpdateReq(
@@ -10,6 +11,6 @@ public record EmployerUpdateReq(
         String companyName,
         String companyLocation,
         String companyNumber,
-        Set<String> jobFields
+        List<String> jobFields
 ) {
 }

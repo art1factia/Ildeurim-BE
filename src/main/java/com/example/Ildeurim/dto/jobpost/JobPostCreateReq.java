@@ -21,7 +21,7 @@ public record JobPostCreateReq(
         Integer workNumber,
         Boolean careerRequirement,
         List<String> applyMethods,
-        List<String> jobFields,
+        String jobField,
         LocalDateTime startDate,
         LocalDateTime expiryDate,
         String status,
@@ -43,7 +43,7 @@ public record JobPostCreateReq(
                 .workDaysCount(workNumber)
                 .careerRequirement(careerRequirement)
                 .applyMethods(applyMethods.stream().map(ApplyMethod::fromLabel).collect(Collectors.toSet()))
-                .jobFields(jobFields.stream().map(JobField::fromLabel).collect(Collectors.toSet()))
+                .jobField(JobField.fromLabel(jobField))
 
                 .startDate(startDate) //TODO: LocalDateTime 형변환
                 .expiryDate(expiryDate) //TODO: LocalDateTime 형변환
@@ -56,5 +56,6 @@ public record JobPostCreateReq(
                 .educationRequirement(EducationRequirement.fromLabel(educationRequirement))
                 .employmentType(EmploymentType.fromLabel(employmentType))
                 .build();
+
     }
 }

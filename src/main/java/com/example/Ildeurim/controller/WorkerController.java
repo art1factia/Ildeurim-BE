@@ -22,7 +22,7 @@ public class WorkerController {
     private final WorkerService workerService;
     private final CareerService careerService;
 
-    @PostMapping
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponse> createWorker(@RequestBody WorkerCreateReq req) {
         WorkerSignupRes res = workerService.signup(AuthContext.principal().get(), req);
         return ResponseEntity.ok(new ApiResponse(true, 201, "create worker success", res));

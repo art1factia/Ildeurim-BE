@@ -20,7 +20,7 @@ public class EmployerController {
     private final EmployerService employerService;
     private final CareerService careerService;
 
-    @PostMapping
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponse> createEmployer(@RequestBody EmployerCreateReq req) {
         EmployerSignupRes res = employerService.signup(AuthContext.principal().get(), req);
         return ResponseEntity.ok(new ApiResponse(true, 201, "create employer success", res));
