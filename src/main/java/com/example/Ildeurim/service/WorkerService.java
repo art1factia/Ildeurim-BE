@@ -14,6 +14,7 @@ import com.example.Ildeurim.mapper.WorkPlaceMapper;
 import com.example.Ildeurim.mapper.WorkerUpdateCmdMapper;
 import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -47,17 +48,17 @@ public class WorkerService {
         // 1) 토큰 검증: WORKER 가입인지 확인
         if (principal == null || principal.userType() != UserType.WORKER) {
 //            System.out.println(principal);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong user type for worker signup");
+            throw new AccessDeniedException("구직자 가입에 맞지 않는 사용자 유형입니다.");
         }
         if (!principal.scope().equals("signup")) {
 //            System.out.println(principal);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token scope is not in signup");
+            throw new AccessDeniedException("토큰 범위가 가입용이 아닙니다.");
         }
 
         // 2) 이미 존재하는지 확인 (이중확인)
         String phone = principal.phone();
         if (workerRepository.existsByPhoneNumber(phone)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Worker already exists");
+            throw new IllegalArgumentException("이미 존재하는 구직자입니다.");
         }
         Worker worker = req.toEntity();
         workerRepository.save(worker);
@@ -72,10 +73,10 @@ public class WorkerService {
     @Transactional(readOnly = true)
     public WorkerDetailRes me() {
         Long id = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 앖습니다."));
         if (userType.equals(UserType.WORKER)) {
             Worker worker = workerRepository.findById(id)
                     .get();
@@ -83,7 +84,7 @@ public class WorkerService {
             long applicationCount = applicationRepository.countByWorkerId(id);
             return WorkerDetailRes.from(worker, applicationCount);
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not employer");
+            throw new AccessDeniedException("구직자가 아닙니다.");
         }
     }
 
@@ -91,9 +92,9 @@ public class WorkerService {
     @Transactional
     public WorkerRes update(WorkerUpdateReq req) {
         Long id = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         Worker worker = workerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Worker not found"));
+                .orElseThrow(() -> new AccessDeniedException("해당 구직자를 찾을 수 없습니다."));
         WorkerUpdateCmd cmd = workerUpdateCmdMapper.toCmd(req, jobFieldMapper, workPlaceMapper, dateMapper);
         worker.update(cmd);
         worker = workerRepository.save(worker);
@@ -103,14 +104,14 @@ public class WorkerService {
     @Transactional
     public String updateMyProfileImage(MultipartFile file) {
         Long userId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         var userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         if (userType != UserType.WORKER)
-            throw new AccessDeniedException("Worker only");
+            throw new AccessDeniedException("구직자 전용");
 
         Worker w = workerRepository.findById(userId)
-                .orElseThrow(() -> new AccessDeniedException("Worker not found"));
+                .orElseThrow(() -> new AccessDeniedException("해당 구직자를 찾을 수 없습니다."));
 
         String newUrl = storage.uploadWorkerProfile(w.getId(), file, w.getProfileImgURL());
         w.setProfileImgURL(newUrl); // 변경 감지

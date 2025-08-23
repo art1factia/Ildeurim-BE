@@ -1,6 +1,9 @@
 package com.example.Ildeurim.exception;
 
 import com.example.Ildeurim.dto.ApiResponse;
+import com.example.Ildeurim.exception.application.DuplicateApplicationException;
+import com.example.Ildeurim.exception.application.JobPostClosedException;
+import com.example.Ildeurim.exception.career.InvalidDateRangeException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +12,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -30,9 +36,30 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    //career 날짜 입력
+    @ExceptionHandler(InvalidDateRangeException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidDateRange(InvalidDateRangeException e) {
+        log.error("InvalidDateRangeException 발생 - Start: {}, End: {}", e.getStartDate(), e.getEndDate());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     // 현재 상태에서 수행할 수 없는 동작 (중복 지원, 제출 불가 등)
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<?>> handleIllegalState(IllegalStateException e) {
+        return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    //마감된 모집공고 처리
+    @ExceptionHandler(JobPostClosedException.class)
+    public ResponseEntity<ApiResponse<?>> handleJobPostClosed(JobPostClosedException e) {
+        log.error("JobPostClosedException 발생 - 공고 ID: {}", e.getJobPostId());
+        return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateApplicationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDuplicateApplication(DuplicateApplicationException e) {
+        log.error("DuplicateApplicationException 발생 - 사용자 ID: {}, 공고 ID: {}",
+                e.getUserId(), e.getJobPostId());
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 

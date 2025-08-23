@@ -29,11 +29,11 @@ public class JobService {
     @Transactional
     public JobRes create(JobCreateReq req) {
         Long loginUserId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         // 본인 Worker를 인증 컨텍스트로 식별 (ERD 필드만 사용: 요청 바디에 workerId 불필요)
         Worker worker = workerRepository.findById(loginUserId)
-                .orElseThrow(() -> new EntityNotFoundException("worker not found"));
+                .orElseThrow(() -> new EntityNotFoundException("찾을 수 없는 구직자입니다."));
 
         Job job = Job.builder()
                 .worker(worker)
@@ -64,7 +64,7 @@ public class JobService {
     @Transactional(readOnly = true)
     public JobRes get(Long id) {
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("job not found"));
+                .orElseThrow(() -> new EntityNotFoundException("해당 근로를 찾을 수 없습니다."));
         return toRes(job);
     }
 
@@ -72,13 +72,13 @@ public class JobService {
     @Transactional
     public JobRes update(Long id, JobUpdateReq req) {
         Long loginUserId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("job not found"));
+                .orElseThrow(() -> new EntityNotFoundException("해당 공고를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("no access to update job");
+            throw new AccessDeniedException("근로를 수정할 권한이 없습니다.");
         }
 
         if (req.jobTitle() != null) job.setJobTitle(req.jobTitle());
@@ -94,13 +94,13 @@ public class JobService {
     @Transactional
     public void end(Long id) {
         Long loginUserId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("job not found"));
+                .orElseThrow(() -> new EntityNotFoundException("해당 근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("no access to end job");
+            throw new AccessDeniedException("근로를 종료할 권한이 없습니다.");
         }
 
         job.setIsWorking(false);
@@ -111,13 +111,13 @@ public class JobService {
     @Transactional
     public JobRes upsertContract(Long id, JobContractReq req) {
         Long loginUserId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("job not found"));
+                .orElseThrow(() -> new EntityNotFoundException("근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("no access to update contract");
+            throw new AccessDeniedException("계약서를 수정할 권한이 없습니다.");
         }
 
         job.setContractUrl(req.contractUrl());
