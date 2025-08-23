@@ -13,13 +13,12 @@ import java.time.LocalDateTime;
 
 @Getter
 public class ApplicationCreateReq {
-    @NotNull private Long jobPostId;
     @NotNull private String applyMethod; //ApplyMethod
     @NotNull private Boolean isCareerIncluding;
 
     public ApplyMethod toApplyMethod() {
         try {
-            return ApplyMethod.fromString(applyMethod); //
+            return ApplyMethod.fromLabel(applyMethod); //
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 지원 방법입니다: " + applyMethod);
         }

@@ -17,6 +17,7 @@ import com.example.Ildeurim.dto.application.res.ApplicationRes;
 import com.example.Ildeurim.dto.application.res.SimpleApplicationRes;
 import com.example.Ildeurim.jwt.JwtUtil;
 import com.example.Ildeurim.repository.ApplicationRepository;
+import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.JobPostRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,19 +36,20 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final JobPostRepository jobPostRepository;
     private final WorkerRepository workerRepository;
+    private final EmployerRepository employerRepository;
 
     /*--------------------- 간편 지원 관련 서비스 ---------------------*/
 
     /* 지원서 초안 생성 */
     @Transactional
-    public Long createApplication(ApplicationCreateReq req) {
+    public Long createApplication(ApplicationCreateReq req, Long jobPostId) {
         // 1. JWT 토큰에서 현재 사용자 ID를 가져옵니다.
         Long workerId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new AccessDeniedException("User is not a worker"));
 
-        JobPost jobPost = jobPostRepository.findById(req.getJobPostId())
+        JobPost jobPost = jobPostRepository.findById(jobPostId)
                 .orElseThrow(() -> new EntityNotFoundException("Job post not found"));
 
         // 유효한 공고(OPEN 상태)인지 확인
@@ -58,7 +60,7 @@ public class ApplicationService {
         // 중복 지원서 여부 확인
         boolean exists = applicationRepository.existsByWorkerIdAndJobPostIdAndApplicationStatusIn(
                 workerId,
-                req.getJobPostId(),
+                jobPostId,
                 List.of(ApplicationStatus.DRAFT, ApplicationStatus.NEEDINTERVIEW,ApplicationStatus.PENDING)
         );
         if (exists) {
@@ -186,19 +188,19 @@ public class ApplicationService {
 
     /*--------------------- 전화 지원 조회 관련 서비스 ---------------------*/
     @Transactional
-    public Long createPhoneApplication(PhoneApplicationReq req) {
+    public ApplicationRes createPhoneApplication(long jobPostId) {
         Long workerId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new AccessDeniedException("User is not a worker"));
 
-        JobPost jobPost = jobPostRepository.findById(req.getJobPostId())
+        JobPost jobPost = jobPostRepository.findById(jobPostId)
                 .orElseThrow(() -> new EntityNotFoundException("Job post not found"));
 
         // 중복 지원서 여부 확인
         boolean exists = applicationRepository.existsByWorkerIdAndJobPostIdAndApplicationStatusIn(
                 workerId,
-                req.getJobPostId(),
+                jobPostId,
                 List.of(ApplicationStatus.DRAFT, ApplicationStatus.NEEDINTERVIEW,ApplicationStatus.PENDING)
         );
         if (exists) {
@@ -215,8 +217,8 @@ public class ApplicationService {
                 .answers(AnswerList.empty()) // 답변 리스트 없음
                 .build();
 
-        applicationRepository.save(newApplication);
-        return newApplication.getId();
+        newApplication= applicationRepository.save(newApplication);
+        return ApplicationRes.of(newApplication);
     }
 
 
@@ -261,24 +263,22 @@ public class ApplicationService {
 
 
     /*--------------------- 고용주 목록 조회 ---------------------*/
-//    public List<ApplicationListRes> getApplicantsList(Long jobPostId) {
-//        // 1. 현재 로그인한 고용주 ID를 가져옵니다.
-//        //Long employerId = JwtUtil.getEmployerId();
-//
-//        // 2. 해당 모집 공고를 조회하고, 현재 고용주의 소유인지 확인하여 보안을 강화합니다.
-//        JobPost jobPost = jobPostRepository.findById(jobPostId)
-//                .orElseThrow(() -> new IllegalArgumentException("모집 공고를 찾을 수 없습니다."));
-//
-//        //if (!jobPost.getEmployer().getId().equals(employerId)) {
-//        //    throw new SecurityException("자원 접근 권한이 없습니다.");
-//        //}
-//
-//        List<Application> applications = applicationRepository.findByJobPost(jobPost);
-//
-//        return applications.stream()
-//                .map(ApplicationListRes::of)
-//                .collect(Collectors.toList());
-//    }
+    public List<ApplicationListRes> getApplicantsList(Long jobPostId) {
+        Long userId = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+        Employer employer = employerRepository.findById(userId)
+                .orElseThrow(() -> new AccessDeniedException("user is not employer"));
+        JobPost jobPost = jobPostRepository.findById(jobPostId)
+                .orElseThrow(()-> new EntityNotFoundException("jobPost not found"));
+        boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
+        if (!isMine) throw new AccessDeniedException("no access to update job post");
+
+        List<Application> applications = applicationRepository.findByJobPost(jobPost);
+
+        return applications.stream()
+                .map(ApplicationListRes::of)
+                .collect(Collectors.toList());
+    }
 
     /*--------------------- 지원 상태 변화---------------------*/
 

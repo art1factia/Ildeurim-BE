@@ -3,6 +3,7 @@ package com.example.Ildeurim.dto.jobpost;
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.JobPost;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,6 +32,7 @@ public record JobPostRes(
         LocalTime workEndTime,
         EducationRequirement educationRequirement,
         EmploymentType employmentType,
+        QuestionList questionList,
         Boolean saveQuestionList,
         WorkPlace workPlace,
         Long employerId,
@@ -60,6 +62,7 @@ public record JobPostRes(
                 j.getWorkEndTime(),
                 j.getEducationRequirement(),
                 j.getEmploymentType(),
+                j.getQuestionList(),
                 j.getSaveQuestionList(),
                 j.getWorkPlace(),
                 j.getEmployer().getId(),

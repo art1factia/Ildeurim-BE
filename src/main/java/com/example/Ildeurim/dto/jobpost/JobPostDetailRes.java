@@ -2,6 +2,7 @@ package com.example.Ildeurim.dto.jobpost;
 
 import com.example.Ildeurim.commons.enums.jobpost.*;
 import com.example.Ildeurim.domain.JobPost;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,6 +44,7 @@ public class JobPostDetailRes {
 
     private String employerName;
     private String employerPhone;
+    private QuestionList questionList;
 
 
     public static JobPostDetailRes of(JobPost jobPost) {
@@ -69,6 +71,7 @@ public class JobPostDetailRes {
                 .expiryDate(jobPost.getExpiryDate())
                 .employerName(jobPost.getEmployer().getName())
                 .employerPhone(jobPost.getEmployer().getPhoneNumber())
+                .questionList(jobPost.getQuestionList())
                 .build();
     }
 }
