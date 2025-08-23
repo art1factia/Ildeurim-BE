@@ -1,6 +1,7 @@
 package com.example.Ildeurim.dto.application.res;
 
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.Application;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class SimpleApplicationRes {
     private String title;
     private String location;
     private String applicationStatus;
+    private WorkPlace workspace;
 
     public static SimpleApplicationRes of(Application application) {
         return SimpleApplicationRes.builder()

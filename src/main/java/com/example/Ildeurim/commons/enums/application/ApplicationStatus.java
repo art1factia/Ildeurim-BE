@@ -3,6 +3,8 @@ package com.example.Ildeurim.commons.enums.application;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public enum ApplicationStatus {
 
         DRAFT("임시저장"),
@@ -30,5 +32,12 @@ public enum ApplicationStatus {
             }
         }
         throw new IllegalArgumentException("Unknown ApplicationStatus label: " + label);
+    }
+
+    public static ApplicationStatus fromString(String value) {
+        return Arrays.stream(values())
+                .filter(e -> e.name().equalsIgnoreCase(value))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid apply method: " + value));
     }
 }

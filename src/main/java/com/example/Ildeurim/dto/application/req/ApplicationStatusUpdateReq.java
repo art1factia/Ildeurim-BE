@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 //최종 저장 dto
 public record ApplicationStatusUpdateReq(
-        @NotNull Long applicationId,
-        @NotNull ApplicationStatus newStatus
-) {}
+        @NotNull String newStatus //ApplicationStatus
+) {
+    public ApplicationStatus toApplicationStatus() {
+        return ApplicationStatus.fromString(newStatus); }
+}

@@ -14,15 +14,14 @@ import java.time.LocalDateTime;
 @Getter
 public class ApplicationCreateReq {
     @NotNull private Long jobPostId;
-    private Long workerId; //나중에 삭제할 예정
-    @NotNull private ApplyMethod applyMethod;
+    @NotNull private String applyMethod; //ApplyMethod
     @NotNull private Boolean isCareerIncluding;
 
     public Application toEntity(JobPost jobPost, Worker worker) {
         return Application.builder()
                 .submissionTime(LocalDateTime.now())
                 .applicationStatus(ApplicationStatus.DRAFT)
-                .applyMethod(applyMethod)
+                .applyMethod(ApplyMethod.fromString(applyMethod))
                 .isCareerIncluding(isCareerIncluding)
                 .jobPost(jobPost)
                 .worker(worker)
