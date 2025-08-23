@@ -1,9 +1,13 @@
 package com.example.Ildeurim.exception;
 
 import com.example.Ildeurim.dto.ApiResponse;
+import com.example.Ildeurim.exception.job.JobNotFoundException;
+import com.example.Ildeurim.exception.job.JobPermissionException;
 import com.example.Ildeurim.exception.application.DuplicateApplicationException;
 import com.example.Ildeurim.exception.application.JobPostClosedException;
 import com.example.Ildeurim.exception.career.InvalidDateRangeException;
+import com.example.Ildeurim.exception.jobPost.JobPostNotFoundException;
+import com.example.Ildeurim.exception.jobPost.JobPostPermissionException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +28,37 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
+    //공고 수정 권한 없음.
+    @ExceptionHandler(JobPostPermissionException.class)
+    public ResponseEntity<ApiResponse<?>> handleJobPostPermission(JobPostPermissionException e) {
+        log.error("JobPostPermissionException 발생 - 공고 ID: {}", e.getJobPostId());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
+    }
+
+    //근로 수정 권한 없음
+    @ExceptionHandler(JobPermissionException.class)
+    public ResponseEntity<ApiResponse<?>> handleJobNotFound(JobPermissionException e) {
+        log.error("JobPermissionException 발생 - 근로 ID: {}", e.getJobId());
+        return buildErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
+    }
+
     // 엔티티(리소스)를 찾을 수 없는 경우 (DB 조회 실패 등)
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleEntityNotFound(EntityNotFoundException e) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    //모집공고 찾을 수 없음.
+    @ExceptionHandler(JobPostNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleJobPostNotFound(JobPostNotFoundException e) {
+        log.error("JobPostNotFoundException 발생 - 공고 ID: {}", e.getJobPostId());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    //근로를 찾을 수 없음
+    @ExceptionHandler(JobNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleJobNotFound(JobNotFoundException e) {
+        log.error("JobNotFoundException 발생 - 근로 ID: {}", e.getJobId());
         return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
@@ -56,6 +88,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    //지원서 중복
     @ExceptionHandler(DuplicateApplicationException.class)
     public ResponseEntity<ApiResponse<?>> handleDuplicateApplication(DuplicateApplicationException e) {
         log.error("DuplicateApplicationException 발생 - 사용자 ID: {}, 공고 ID: {}",

@@ -16,6 +16,7 @@ import com.example.Ildeurim.mapper.WorkerUpdateCmdMapper;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.ReviewRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,16 +47,16 @@ public class EmployerService {
     public EmployerSignupRes signup(CustomPrincipal principal, EmployerCreateReq req) {
         // 1) 토큰 검증: Employer 가입인지 확인
         if (principal == null || principal.userType() != UserType.EMPLOYER ) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "고용주 가입에 맞지 않는 사용자 유형입니다.");
+            throw new AccessDeniedException("고용주 가입에 맞지 않는 사용자 유형입니다.");
         }
         if (! principal.scope().equals("signup")){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "토큰 범위가 가입용이 아닙니다.");
+            throw new AccessDeniedException("토큰 범위가 가입용이 아닙니다.");
         }
 
         // 2) 이미 존재하는지 확인 (이중확인)
         String phone = principal.phone();
         if (employerRepository.existsByPhoneNumber(phone)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 존재하는 고용주입니다.");
+            throw new IllegalArgumentException("이미 존재하는 고용주입니다.");
         }
         Employer employer = req.toEntity();
         employerRepository.save(employer);
@@ -82,7 +83,7 @@ public class EmployerService {
             //TODO: JSON(questionList) -> 추후 상세 구현
             return EmployerDetailRes.from(employer, reviewCount, new JSONObject());
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "고용주가 아닙니다.");
+            throw new IllegalArgumentException("고용주가 아닙니다.");
         }
     }
 
@@ -91,7 +92,7 @@ public class EmployerService {
         Long id = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         Employer employer = employerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 고용주를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 고용주를 찾을 수 없습니다."));
         EmployerUpdateCmd cmd = employerUpdateCmdMapper.toCmd(req, jobFieldMapper);
         employer.update(cmd);
         employer = employerRepository.save(employer);

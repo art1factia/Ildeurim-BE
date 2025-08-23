@@ -106,7 +106,7 @@ public class WorkerService {
         Long userId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         var userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+                .orElseThrow(() -> new AccessDeniedException("=사용자 유형이 유효하지 않습니다."));
         if (userType != UserType.WORKER)
             throw new AccessDeniedException("구직자 전용");
 

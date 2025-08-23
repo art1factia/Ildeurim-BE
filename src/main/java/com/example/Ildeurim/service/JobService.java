@@ -7,6 +7,9 @@ import com.example.Ildeurim.dto.job.JobContractReq;
 import com.example.Ildeurim.dto.job.JobCreateReq;
 import com.example.Ildeurim.dto.job.JobRes;
 import com.example.Ildeurim.dto.job.JobUpdateReq;
+import com.example.Ildeurim.exception.job.JobNotFoundException;
+import com.example.Ildeurim.exception.job.JobPermissionException;
+import com.example.Ildeurim.exception.jobPost.JobPostNotFoundException;
 import com.example.Ildeurim.repository.JobRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -64,7 +67,7 @@ public class JobService {
     @Transactional(readOnly = true)
     public JobRes get(Long id) {
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 근로를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id,"해당 근로를 찾을 수 없습니다."));
         return toRes(job);
     }
 
@@ -75,10 +78,10 @@ public class JobService {
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 공고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id,"해당 근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("근로를 수정할 권한이 없습니다.");
+            throw new JobPermissionException(id,"근로를 수정할 권한이 없습니다.");
         }
 
         if (req.jobTitle() != null) job.setJobTitle(req.jobTitle());
@@ -97,10 +100,10 @@ public class JobService {
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 근로를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobNotFoundException(id,"해당 근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("근로를 종료할 권한이 없습니다.");
+            throw new JobPermissionException(id,"근로를 종료할 권한이 없습니다.");
         }
 
         job.setIsWorking(false);
@@ -114,10 +117,10 @@ public class JobService {
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("근로를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id,"근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new AccessDeniedException("계약서를 수정할 권한이 없습니다.");
+            throw new JobPermissionException(id,"계약서를 수정할 권한이 없습니다.");
         }
 
         job.setContractUrl(req.contractUrl());
