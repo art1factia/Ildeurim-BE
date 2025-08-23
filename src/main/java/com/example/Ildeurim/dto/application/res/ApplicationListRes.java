@@ -1,5 +1,6 @@
 package com.example.Ildeurim.dto.application.res;
 
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Worker;
 import lombok.Builder;
@@ -19,6 +20,9 @@ public class ApplicationListRes {
     private String workerGender;
     // 지원자 나이
     private int workerAge;
+    // 지원자 거주 지역
+    private String workerAddress;
+    private WorkPlace workplace;
     // 지원서 상태 (예: '지원 완료', '면접 진행 중')
     private String applicationStatus;
 
@@ -36,6 +40,7 @@ public class ApplicationListRes {
                 .workerName(worker.getName())
                 .workerGender(worker.getGender().getLabel())
                 .workerAge(age)
+                .workerAddress(worker.getResidence())
                 .applicationStatus(application.getApplicationStatus().getLabel())
                 .build();
     }

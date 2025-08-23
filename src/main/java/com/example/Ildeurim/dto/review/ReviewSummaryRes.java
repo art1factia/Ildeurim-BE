@@ -28,4 +28,6 @@ public class ReviewSummaryRes {
 
     // 전체 리뷰 개수
     private Long totalReviews;
+
+    //
 }

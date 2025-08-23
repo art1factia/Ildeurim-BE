@@ -8,9 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Entity
@@ -37,18 +35,19 @@ public class Review extends BaseEntity {
 
     @ElementCollection(targetClass = Hashtag.class)
     @CollectionTable(
-            name = "hashtags", // 별도 테이블 이름
-            joinColumns = @JoinColumn(name = "reviewId") // 연결 컬럼
+            name = "reviewHashtags", // 테이블 이름 명확하게 변경
+            joinColumns = @JoinColumn(name = "reviewId")
     )
-    @Enumerated(EnumType.STRING) // enum을 문자열로 저장
+    @Enumerated(EnumType.STRING)
     @Column(name = "hashtag", nullable = false)
-    private List<Hashtag> hashtags;
+    private Set<Hashtag> hashtags = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "reviewAnswers", joinColumns = @JoinColumn(name = "reviewId"))
     @MapKeyEnumerated(EnumType.STRING)   // question = EvaluationType (문자열 저장)
     @Column(name = "answer")             // answer = int (Converter 덕분에 숫자로 저장)
+    @MapKeyColumn(name = "evaluationType")
     private Map<EvaluationType, EvaluationAnswer> answers = new HashMap<>();
 
-    //으으
+
 }

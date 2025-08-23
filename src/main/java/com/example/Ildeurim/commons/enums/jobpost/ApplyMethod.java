@@ -3,6 +3,8 @@ package com.example.Ildeurim.commons.enums.jobpost;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public enum ApplyMethod {
     QUICK("간편지원"),
     PHONE("전화지원");
@@ -35,5 +37,12 @@ public enum ApplyMethod {
             }
         }
         return null;
+    }
+
+    public static ApplyMethod fromString(String value) {
+        return Arrays.stream(values())
+                .filter(e -> e.name().equalsIgnoreCase(value))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Invalid apply method: " + value));
     }
 }

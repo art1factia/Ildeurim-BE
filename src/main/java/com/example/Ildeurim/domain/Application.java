@@ -55,10 +55,10 @@ public class Application extends BaseEntity {
     private AnswerList answers;
 
     public void submit() {
-        if (this.applicationStatus == ApplicationStatus.PENDING) {
+        if (this.applicationStatus != ApplicationStatus.DRAFT) {
             throw new IllegalStateException("이미 제출된 지원서입니다.");
         }
-        this.applicationStatus = ApplicationStatus.PENDING;
+        this.applicationStatus = ApplicationStatus.NEEDINTERVIEW;
         this.submissionTime = LocalDateTime.now();
     }
 

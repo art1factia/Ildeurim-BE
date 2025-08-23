@@ -1,16 +1,16 @@
 package com.example.Ildeurim.controller;
 
+import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.ApiResponse;
-import com.example.Ildeurim.dto.application.req.ApplicationAnswerUpdateReq;
-import com.example.Ildeurim.dto.application.req.ApplicationCreateReq;
-import com.example.Ildeurim.dto.application.req.ApplicationModifyReq;
-import com.example.Ildeurim.dto.application.req.ApplicationStatusUpdateReq;
+import com.example.Ildeurim.dto.application.req.*;
+import com.example.Ildeurim.dto.application.res.ApplicationDetailRes;
 import com.example.Ildeurim.dto.application.res.ApplicationListRes;
 import com.example.Ildeurim.dto.application.res.ApplicationRes;
 import com.example.Ildeurim.dto.application.res.SimpleApplicationRes;
 import com.example.Ildeurim.service.ApplicationService;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,16 +22,16 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping
+@RequestMapping("/applications")
 public class ApplicationController {
     private final ApplicationService applicationService;
 
     /*--------------------- 간편 지원 관련 컨트롤러 ---------------------*/
 
     /*초안 생성*/
-    @PostMapping("/applications/{jobPostId}/apply")
-    public ResponseEntity<ApiResponse> createApplication(@PathVariable Long jobPostId, @RequestBody ApplicationCreateReq req) {
-        Long applicationId=applicationService.addApplication(req);
+    @PostMapping("/{jobPostId}/apply")
+    public ResponseEntity<ApiResponse> createApplication(@PathVariable Long jobPostId, @RequestBody @Valid ApplicationCreateReq req) {
+        Long applicationId = applicationService.createApplication(req);
         Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
 
         ApiResponse<Map<String, Long>> apiResponse = new ApiResponse<>(
@@ -40,23 +40,26 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
-    /*임시 저장*/
-    @PatchMapping("/applications/{applicationId}/answers")
-    public ResponseEntity<ApiResponse> addAnswerToApplication(@RequestBody ApplicationAnswerUpdateReq req) {
-        applicationService.addAnswerToApplication(req);
 
-        ApiResponse<Void> apiResponse = new ApiResponse<>(
-                true, HttpStatus.OK.value(), "답변이 성공적으로 임시 저장되었습니다."
+    /*임시 저장,수정*/
+    @PatchMapping("/{id}/answers")
+    public ResponseEntity<ApiResponse> addAnswerToApplication(@PathVariable Long applicationId, @RequestBody ApplicationAnswerUpdateReq req) {
+        applicationService.addAnswerToApplication(applicationId, req);
+        Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
+
+        ApiResponse<Map<String, Long>> apiResponse = new ApiResponse<>(
+                true, HttpStatus.OK.value(), "답변이 성공적으로 임시 저장되었습니다.", data
         );
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
 
+
     /*최종 지원서 제출*/
-    @PostMapping("/applications/{applicationId}/submit")
+    @PostMapping("/{id}/submit")
     public ResponseEntity<ApiResponse> submitApplication(
-            @RequestBody ApplicationStatusUpdateReq req
+            @PathVariable Long applictionId
     ) {
-        ApplicationRes res = applicationService.submitApplication(req);
+        ApplicationRes res = applicationService.submitApplication(applictionId);
 
         ApiResponse<ApplicationRes> apiResponse = new ApiResponse<>(
                 true, HttpStatus.OK.value(), "지원서가 성공적으로 제출되었습니다.", res
@@ -64,23 +67,21 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
 
+
+
     /*지원서 수정*/
-    @PatchMapping("/applications/{applicationId}/answer")
-    public ResponseEntity<ApiResponse> modifyApplication(
-            @PathVariable Long applicationId, @RequestBody ApplicationModifyReq req
-    ) {
-        // 보안: PathVariable의 ID와 DTO의 ID가 일치하는지 확인
-        if (!applicationId.equals(req.applicationId())) {
-            throw new IllegalArgumentException("지원서 ID가 일치하지 않습니다.");
-        }
+//    @PatchMapping("/{id}/answer")
+//    public ResponseEntity<ApiResponse> modifyApplication(
+//            @PathVariable Long applicationId, @RequestBody ApplicationModifyReq req
+//    ) {
+//        applicationService.modifyApplication(applicationId,req);
+//        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(true, HttpStatus.OK.value(), "지원서가 성공적으로 수정되었습니다.")
+//        );
+//    }
 
-        applicationService.modifyApplication(req);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(true, HttpStatus.OK.value(), "지원서가 성공적으로 수정되었습니다.")
-        );
-    }
-
-    @DeleteMapping("/applications/{applicationId}")
-    public ResponseEntity<ApiResponse<Void>> abandonApplication(@PathVariable Long applicationId) {
+    /*지원서 삭제*/
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteApplication(@PathVariable Long applicationId) {
         applicationService.deleteApplication(applicationId);
 
         return ResponseEntity.status(HttpStatus.OK).body(
@@ -88,10 +89,22 @@ public class ApplicationController {
         );
     }
 
+    /*--------------------- 전화 지원 추가 관련 컨트롤러---------------------*/
+    @PostMapping("/phoneApply")
+    public ResponseEntity<ApiResponse> phoneApply(@RequestBody PhoneApplicationReq req) {
+        Long applicationId = applicationService.createPhoneApplication(req);
+        Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new ApiResponse<>(true, HttpStatus.CREATED.value(), "전화 지원이 성공적으로 처리되었습니다.", data)
+        );
+    }
+
+
     /*--------------------- 구직자의 지원 조회 관련 컨트롤러---------------------*/
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse> getMyApplications(@RequestParam Long workerId) {
-        List<SimpleApplicationRes> applications = applicationService.getMyApplications(workerId);
+    public ResponseEntity<ApiResponse> getMyApplications() {
+        List<SimpleApplicationRes> applications = applicationService.getMyApplications();
 
         ApiResponse<List<SimpleApplicationRes>> apiResponse = new ApiResponse<>(
                 true, HttpStatus.OK.value(), "지원 내역 조회 성공", applications
@@ -100,44 +113,58 @@ public class ApplicationController {
     }
 
     /*--------------------- 고용주 지원자 조회 관련 컨트롤러---------------------*/
-    @GetMapping("/jobPosts/applications")
-    public ResponseEntity<ApiResponse> getApplicantsList(
-            @PathVariable Long jobPostId
-    ) {
-        List<ApplicationListRes> resultList = applicationService.getApplicantsList(jobPostId);
-
-        ApiResponse apiResponse = new ApiResponse<>(
-                true, HttpStatus.OK.value(), "지원자 목록 조회 성공", resultList
-        );
-
-        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
-    }
+//    @GetMapping("/jobPosts/applications")
+//    public ResponseEntity<ApiResponse> getApplicantsList(
+//            @PathVariable Long jobPostId
+//    ) {
+//        List<ApplicationListRes> resultList = applicationService.getApplicantsList(jobPostId);
+//
+//        ApiResponse apiResponse = new ApiResponse<>(
+//                true, HttpStatus.OK.value(), "지원자 목록 조회 성공", resultList
+//        );
+//
+//        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+//    }
 
     /*지원 상태 변화*/
-    @PatchMapping("/{applicationId}/")
-    public ResponseEntity<ApiResponse<Void>> updateApplicationStatus(
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateApplicationStatus(
             @PathVariable Long applicationId,
             @RequestBody ApplicationStatusUpdateReq req
     ) {
-        applicationService.updateApplicationStatus(applicationId, req.newStatus().getLabel());
+
+        applicationService.updateApplicationStatus(applicationId, req.toApplicationStatus());
 
         return ResponseEntity.ok(
                 new ApiResponse<>(true, HttpStatus.OK.value(), "지원서 상태 변경 성공")
         );
     }
 
-    /*일괄 탈락 처리*/
-    @PatchMapping("/")
-    public ResponseEntity<ApiResponse> rejectNonHiredApplicants(
-            @PathVariable Long jobPostId
-    ) {
-        applicationService.rejectNonHiredApplicants(jobPostId);
+    /*상세 이력서 홛인*/
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse> getApplicationDetails(@PathVariable Long applicationId) {
+        ApplicationDetailRes res = applicationService.getApplicationDetails(applicationId);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, HttpStatus.OK.value(), "불합격자 처리 완료")
+        ApiResponse<ApplicationDetailRes> apiResponse = new ApiResponse<>(
+                true, HttpStatus.OK.value(), "지원서 상세 조회 성공", res
         );
+
+        return ResponseEntity.ok(apiResponse);
     }
-
-
 }
+
+//    /*일괄 탈락 처리*/
+//    @PatchMapping("/")
+//    public ResponseEntity<ApiResponse> rejectNonHiredApplicants(
+//            @PathVariable Long jobPostId
+//    ) {
+//        applicationService.rejectNonHiredApplicants(jobPostId);
+//
+//        return ResponseEntity.ok(
+//                new ApiResponse<>(true, HttpStatus.OK.value(), "불합격자 처리 완료")
+//        );
+//    }
+
+
+
 

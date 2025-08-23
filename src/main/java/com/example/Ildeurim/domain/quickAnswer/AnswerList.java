@@ -9,6 +9,7 @@ public record AnswerList(List<AnswerItem> items) {
 
     public AnswerList addItem(AnswerItem newItem) {
         List<AnswerItem> newItems = new ArrayList<>(this.items);
+        newItems.removeIf(item -> item.questionId().equals(newItem.questionId()));
         newItems.add(newItem);
         return new AnswerList(newItems);
     }

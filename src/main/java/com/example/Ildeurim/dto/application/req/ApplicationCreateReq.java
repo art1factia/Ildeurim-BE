@@ -14,15 +14,22 @@ import java.time.LocalDateTime;
 @Getter
 public class ApplicationCreateReq {
     @NotNull private Long jobPostId;
-    private Long workerId; //나중에 삭제할 예정
-    @NotNull private ApplyMethod applyMethod;
+    @NotNull private String applyMethod; //ApplyMethod
     @NotNull private Boolean isCareerIncluding;
+
+    public ApplyMethod toApplyMethod() {
+        try {
+            return ApplyMethod.fromString(applyMethod); //
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 지원 방법입니다: " + applyMethod);
+        }
+    }
 
     public Application toEntity(JobPost jobPost, Worker worker) {
         return Application.builder()
                 .submissionTime(LocalDateTime.now())
                 .applicationStatus(ApplicationStatus.DRAFT)
-                .applyMethod(applyMethod)
+                .applyMethod(toApplyMethod())
                 .isCareerIncluding(isCareerIncluding)
                 .jobPost(jobPost)
                 .worker(worker)
