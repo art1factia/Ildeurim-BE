@@ -1,5 +1,6 @@
 package com.example.Ildeurim.controller;
 
+import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
 import com.example.Ildeurim.domain.JobPost;
 import com.example.Ildeurim.dto.ApiResponse;
 import com.example.Ildeurim.dto.application.req.*;
@@ -9,6 +10,7 @@ import com.example.Ildeurim.dto.application.res.ApplicationRes;
 import com.example.Ildeurim.dto.application.res.SimpleApplicationRes;
 import com.example.Ildeurim.service.ApplicationService;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ public class ApplicationController {
 
     /*초안 생성*/
     @PostMapping("/{jobPostId}/apply")
-    public ResponseEntity<ApiResponse> createApplication(@PathVariable Long jobPostId, @RequestBody ApplicationCreateReq req) {
+    public ResponseEntity<ApiResponse> createApplication(@PathVariable Long jobPostId, @RequestBody @Valid ApplicationCreateReq req) {
         Long applicationId = applicationService.createApplication(req);
         Map<String, Long> data = Collections.singletonMap("applicationId", applicationId);
 
@@ -131,7 +133,7 @@ public class ApplicationController {
             @RequestBody ApplicationStatusUpdateReq req
     ) {
 
-        applicationService.updateApplicationStatus(applicationId, req.newStatus());
+        applicationService.updateApplicationStatus(applicationId, req.toApplicationStatus());
 
         return ResponseEntity.ok(
                 new ApiResponse<>(true, HttpStatus.OK.value(), "지원서 상태 변경 성공")

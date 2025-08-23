@@ -20,10 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,7 +43,7 @@ public class ReviewService {
 
         // 근로자만 작성 가능
         if (userType != UserType.WORKER) {
-            throw new AccessDeniedException("근로자만 리뷰를 작성할 수 있습니다.");
+            throw new IllegalArgumentException("근로자만 리뷰를 작성할 수 있습니다.");
         }
 
         // Worker를 조회
@@ -64,12 +61,16 @@ public class ReviewService {
             throw new IllegalStateException("해당 고용주 밑에서 근무한 이력이 없습니다. 리뷰를 작성할 수 없습니다.");
         }
 
+        Map<EvaluationType, EvaluationAnswer> answers = req.toAnswerEnums();
+        List<Hashtag> hashtagList = req.toHashtagEnums();
+        Set<Hashtag> hashtagSet = new HashSet<>(hashtagList);
+
         // 리뷰 생성
         Review review = Review.builder()
                 .worker(worker)
                 .employer(employer)
-                .answers(req.answers())
-                .hashtags(req.hashtags())
+                .answers(answers)
+                .hashtags(hashtagSet)
                 .build();
 
         // 저장

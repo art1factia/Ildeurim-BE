@@ -2,6 +2,8 @@ package com.example.Ildeurim.commons.enums.review;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public enum EvaluationType {
     BOSS_KINDNESS("사장님 친절도"),
     COWORKER_KINDNESS("동료 친절도"),
@@ -22,5 +24,13 @@ public enum EvaluationType {
     @JsonValue // JSON 직렬화 시 label 값으로 나가게 됨
     public String getLabel() {
         return label;
+    }
+
+    public static EvaluationType fromLabel(String label) {
+        return Arrays.stream(values())
+                .filter(e -> e.label.equals(label))
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Unknown EvaluationType label: " + label));
     }
 }

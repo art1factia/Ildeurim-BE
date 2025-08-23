@@ -89,6 +89,10 @@ public class ApplicationService {
             throw new IllegalStateException("Only DRAFT applications can be modified.");
         }
 
+        JobPost jobPost = application.getJobPost();
+        if (jobPost.getStatus() != JobPostStatus.OPEN)
+            throw new IllegalStateException("모집이 마감된 공고는 더 이상 수정할 수 없습니다.");
+
         // 질문 ID 검증
         Long questionId = req.answer().questionId();
         List<Long> validQuestionIds = application.getJobPost()
@@ -124,6 +128,11 @@ public class ApplicationService {
         // 2. 지원서 소유자 확인
         boolean isOwner = application.getWorker().getId().equals(workerId);
         if (!isOwner) throw new AccessDeniedException("No access to submit application");
+
+        // 4. 모집 공고 마감 여부 확인
+        JobPost jobPost = application.getJobPost();
+        if (jobPost.getStatus() != JobPostStatus.OPEN)
+            throw new IllegalStateException("모집이 마감된 공고는 제출할 수 없습니다.");
 
         application.submit();
 
@@ -275,7 +284,7 @@ public class ApplicationService {
 
     /*지원자 상태 변환*/
     @Transactional
-    public void updateApplicationStatus(Long applicationId, String newStatus) {
+    public void updateApplicationStatus(Long applicationId, ApplicationStatus newStatus) {
         // 1. 고용주 ID 가져오기
         Long employerId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
@@ -289,10 +298,7 @@ public class ApplicationService {
             throw new AccessDeniedException("자원 접근 권한이 없습니다.");
         }
 
-        // 3. 문자열 상태값을 Enum으로 변환하여 업데이트
-        ApplicationStatus status = ApplicationStatus.valueOf(newStatus.toUpperCase()); //TODO:여기 다시 생각해보기
-        application.updateStatus(status);
-        applicationRepository.save(application);
+        application.updateStatus(newStatus);
     }
 
 
