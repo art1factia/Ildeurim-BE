@@ -46,12 +46,6 @@ public class Career extends BaseEntity{
     @Column(nullable = false)
     private Boolean isOpening = false; // 공개 여부
 
-    @Column(nullable = false)
-    private Integer restime;
-
-    @Column(nullable = false)
-    private Integer workNumber;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private JobField jobField;   // 직무 분야
