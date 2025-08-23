@@ -6,19 +6,20 @@ import org.mapstruct.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+// com.example.Ildeurim.mapper.DateMapper
+import java.time.LocalTime;
 
 @Mapper(config = CommonMapperConfig.class)
 public interface DateMapper {
 
     @Named("toLocalDateOrNull")
-    default LocalDate toLocalDateOrNull(String s) {
-        return DateParsers.parseLocalDate(s);
-    }
+    default LocalDate toLocalDateOrNull(String s) { return DateParsers.parseLocalDate(s); }
 
     @Named("toLocalDateTimeOrNull")
-    default LocalDateTime toLocalDateTimeOrNull(String s) {
-        return DateParsers.parseLocalDateTime(s);
-    }
+    default LocalDateTime toLocalDateTimeOrNull(String s) { return DateParsers.parseLocalDateTime(s); }
+
+    @Named("toLocalTimeOrNull")
+    default LocalTime toLocalTimeOrNull(String s) { return DateParsers.parseLocalTime(s); }
 
     @Named("optLocalDate")
     default java.util.Optional<LocalDate> optLocalDate(String s) {
@@ -28,5 +29,10 @@ public interface DateMapper {
     @Named("optLocalDateTime")
     default java.util.Optional<LocalDateTime> optLocalDateTime(String s) {
         return java.util.Optional.ofNullable(toLocalDateTimeOrNull(s));
+    }
+
+    @Named("optLocalTime")
+    default java.util.Optional<LocalTime> optLocalTime(String s) {
+        return java.util.Optional.ofNullable(toLocalTimeOrNull(s));
     }
 }

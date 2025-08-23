@@ -34,5 +34,12 @@ twilio:
   verify-service-sid: VA04a90416fc1dcb7292cd76083c5083dd
   account-sid: AC97a71daa1aef6c84827925a485110e15
 
+ncp:
+  storage:
+    region: kr-standard
+    endpoint: https://kr.object.ncloudstorage.com
+    bucket: ildeurim-storage
+  access-key: ncp_iam_BPAMKR24gGkLp7rfElxq
+  secret-key: ncp_iam_BPKMKR8pB0og0PrVp84IBAfnTtVKBpxvMk
 
 

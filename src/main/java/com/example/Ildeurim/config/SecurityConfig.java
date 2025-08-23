@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reg -> reg
+                        .requestMatchers("/debug/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()              // OTP 요청/검증
                         .requestMatchers("/workers/signup").hasAuthority("SCOPE_signup")
                         .requestMatchers("/employers/signup").hasAuthority("SCOPE_signup")// 가입 단계 API

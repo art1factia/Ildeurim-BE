@@ -116,7 +116,7 @@ public class JobPost extends BaseEntity {
     private Set<ApplyMethod> applyMethod;
 
     @Column(nullable = false)
-    private Boolean isJobPostUsing=false;  //모집 공고를 계속 이용할건지
+    private Boolean saveQuestionList=false;  //모집 공고를 계속 이용할건지
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employerId", nullable = false)

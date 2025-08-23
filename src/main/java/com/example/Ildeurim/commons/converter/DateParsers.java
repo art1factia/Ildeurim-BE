@@ -45,4 +45,24 @@ public final class DateParsers {
         LocalDateTime ldt = parseLocalDateTime(s);
         return ldt.atZone(ZoneId.of("Asia/Seoul")).toInstant();
     }
+    // 문자열 → LocalTime
+    /** 허용 예: "09:30", "09:30:15", "09:30:15.123", "0930", "09:30+09:00" */
+    public static LocalTime parseLocalTime(String s) {
+        if (s == null || s.isBlank()) return null;
+        String t = s.trim();
+
+        // 1) ISO_LOCAL_TIME: HH:mm[:ss[.SSS]]
+        try { return LocalTime.parse(t, DateTimeFormatter.ISO_LOCAL_TIME); }
+        catch (DateTimeParseException ignore) {}
+
+        // 2) HHmm (분까지만 붙여 쓴 형태)
+        try { return LocalTime.parse(t, DateTimeFormatter.ofPattern("HHmm")); }
+        catch (DateTimeParseException ignore) {}
+
+        // 3) 오프셋이 포함된 경우(예: 09:30+09:00) → 로컬타임만 사용
+        try { return OffsetTime.parse(t, DateTimeFormatter.ISO_OFFSET_TIME).toLocalTime(); }
+        catch (DateTimeParseException ignore) {}
+
+        throw new IllegalArgumentException("Invalid LocalTime: " + s);
+    }
 }

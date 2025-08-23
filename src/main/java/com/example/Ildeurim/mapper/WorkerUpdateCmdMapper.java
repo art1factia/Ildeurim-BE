@@ -23,7 +23,7 @@ public interface WorkerUpdateCmdMapper {
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.phoneNumber())))")
     @Mapping(target = "birthday", qualifiedByName = "optLocalDate", source = "birthday")
     @Mapping(target = "gender",
-            expression = "java(java.util.Optional.ofNullable( Gender.fromLabel(src.gender()) ))")
+            expression = "java(java.util.Optional.ofNullable( Gender.fromLabelNullable(src.gender()) ))")
     @Mapping(target = "residence",
             expression = "java(java.util.Optional.ofNullable(WorkerUpdateCmdMapper.trimToNull(src.residence())))")
     @Mapping(target = "RLG",
@@ -32,5 +32,5 @@ public interface WorkerUpdateCmdMapper {
             expression = "java(java.util.Optional.ofNullable(workPlaceMapper.toWorkPlaceSet( src.BLG() )))")
     @Mapping(target = "jobInterest",
             expression = "java(java.util.Optional.ofNullable(jobFieldMapper.toJobFieldSet( src.jobInterest())))")
-    WorkerUpdateCmd toCmd(WorkerUpdateReq src, @Context JobFieldMapper jobFieldMapper, @Context WorkPlaceMapper workPlaceMapper);
+    WorkerUpdateCmd toCmd(WorkerUpdateReq src, @Context JobFieldMapper jobFieldMapper, @Context WorkPlaceMapper workPlaceMapper, @Context DateMapper dateMapper);
 }

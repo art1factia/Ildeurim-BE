@@ -17,7 +17,7 @@ public record WorkerCreateReq(
         @NotBlank String name,
         @NotBlank @Pattern(regexp = "^\\+?[1-9]\\d{6,14}$") String phoneNumber,
         @NotNull String birthday,
-        @NotNull Gender gender,
+        @NotNull String gender,
         @NotBlank String residence,
         @NotBlank String RLG,
         @NotNull /*@NotEmpty @Size(min = 1)*/ Set<String> BLG,
@@ -28,7 +28,7 @@ public record WorkerCreateReq(
                 .name(name)
                 .birthday(DateParsers.parseLocalDate(birthday))
                 .phoneNumber(phoneNumber)
-                .gender(gender)
+                .gender(Gender.fromLabel(gender))
                 .residence(residence)
                 .RLG(RLG)
                 .BLG(BLG.stream().map(WorkPlace::fromLabel).collect(Collectors.toSet()))

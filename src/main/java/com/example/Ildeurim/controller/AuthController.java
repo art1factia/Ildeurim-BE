@@ -55,7 +55,7 @@ public class AuthController {
                     : employerRepository.findIdByPhoneNumber(req.phone());
             String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 60);
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new JwtRes(access, false))
+                    new ApiResponse<>(true, 200, "existing user login", new JwtRes(access, false))
             );
         } else {
             String signup = jwtUtil.generateSignupToken(req.userType(), req.phone(), 15);
