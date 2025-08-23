@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -23,7 +24,7 @@ public class ReviewRes {
     private Long id;
     private Long employerId;
     private Map<EvaluationType, EvaluationAnswer> answers;
-    private List<Hashtag> hashtags;
+    private Set<Hashtag> hashtags;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
