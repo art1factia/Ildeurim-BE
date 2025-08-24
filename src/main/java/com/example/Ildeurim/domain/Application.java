@@ -46,12 +46,16 @@ public class Application extends BaseEntity {
     @JoinColumn(name = "workerId", nullable = false)
     private Worker worker; // 지원자 정보
 
-    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    // Application.java (inverse side)
+    @OneToOne(mappedBy = "application",
+            fetch = FetchType.LAZY,
+            cascade = { CascadeType.PERSIST, CascadeType.MERGE }, // 필요에 따라 REMOVE/orphanRemoval 추가
+            orphanRemoval = false) // Application 삭제 시 Job도 지우려면 true+REMOVE
     private Job job;
 
     @Convert(converter = AnswerListJsonConverter.class)
-//    @Column(columnDefinition = "jsonb")
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "jsonb")
+//    @Column(columnDefinition = "text")
     private AnswerList answers;
 
     public void submit() {

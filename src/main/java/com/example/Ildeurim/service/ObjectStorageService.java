@@ -9,9 +9,15 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,6 +33,7 @@ public class ObjectStorageService {
     private static final long MAX_BYTES = 5L * 1024 * 1024; // 5MB
 
     private final S3Client s3;
+    private final S3Presigner presigner;
     private final NcpStorageProps props;
 
     /** 워커 프로필 업로드: 기존 이미지가 있으면 삭제(선택) */
@@ -145,4 +152,131 @@ public class ObjectStorageService {
             }
         } catch (Exception ignore) { /* 안전 무시 */ }
     }
+
+    // --- 추가: 계약서 전용 제한 ---
+    private static final Set<String> ALLOWED_CONTRACT_TYPES = Set.of(
+            MediaType.APPLICATION_PDF_VALUE,
+            MediaType.IMAGE_JPEG_VALUE,
+            MediaType.IMAGE_PNG_VALUE,
+            "image/webp"
+    );
+    private static final long MAX_CONTRACT_BYTES = 10L * 1024 * 1024; // 10MB
+
+    /** 근로계약서 업로드: 기존 파일이 우리 버킷이면 삭제 */
+    public String uploadContract(long jobId, MultipartFile file, String oldUrl) {
+        validateContract(file);
+
+        final String contentType = Optional.ofNullable(file.getContentType())
+                .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        final String ext = resolveContractExt(file, contentType);
+
+        final String key = "jobs/%d/contracts/contract-%d-%s.%s"
+                .formatted(jobId, Instant.now().toEpochMilli(), shortId(), ext);
+
+        // 민감한 문서이므로 ACL(공개권한) 설정하지 않음 = private 객체
+        PutObjectRequest req = PutObjectRequest.builder()
+                .bucket(props.getBucket())
+                .key(key)
+                .contentType(contentType)
+                .contentDisposition("attachment; filename=\"contract-%d.%s\"".formatted(jobId, ext))
+                .build();
+
+        try {
+            s3.putObject(req, RequestBody.fromBytes(file.getBytes()));
+        } catch (Exception e) {
+            throw new IllegalStateException("Contract upload failed: " + e.getMessage(), e);
+        }
+
+        // 이전 파일 정리(우리 버킷 소유일 때만)
+        deleteIfMyBucketObject(oldUrl);
+
+        // 비공개 객체라도 위치 식별을 위해 URL(경로)을 저장해 둠.
+        // 실제 다운로드 제공은 presigned URL 생성 등으로 처리하면 안전.
+        return publicUrl(key);
+    }
+
+    // --- 추가: 계약서 검증 ---
+    private void validateContract(MultipartFile file) {
+        if (file == null || file.isEmpty())
+            throw new IllegalArgumentException("파일이 비어 있습니다.");
+        if (file.getSize() > MAX_CONTRACT_BYTES)
+            throw new IllegalArgumentException("파일이 10MB를 초과합니다.");
+
+        String ct = file.getContentType();
+        String name = Optional.ofNullable(file.getOriginalFilename()).orElse("").toLowerCase();
+
+        boolean allowedByCT = (ct != null && ALLOWED_CONTRACT_TYPES.contains(ct));
+        boolean allowedByExt = name.endsWith(".pdf") || name.endsWith(".jpg")
+                || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".webp");
+
+        if (!(allowedByCT || allowedByExt)) {
+            throw new IllegalArgumentException("허용되지 않는 계약서 형식입니다. (pdf/jpeg/png/webp)");
+        }
+    }
+
+    // --- 추가: 계약서 확장자 판별 (pdf 포함) ---
+    private String resolveContractExt(MultipartFile file, String contentType) {
+        String original = file.getOriginalFilename();
+        String ext = (original != null && original.contains("."))
+                ? StringUtils.getFilenameExtension(original).toLowerCase()
+                : null;
+
+        if (ext == null || ext.isBlank()) {
+            if (MediaType.APPLICATION_PDF_VALUE.equals(contentType)) return "pdf";
+            if (MediaType.IMAGE_JPEG_VALUE.equals(contentType)) return "jpg";
+            if (MediaType.IMAGE_PNG_VALUE.equals(contentType)) return "png";
+            if ("image/webp".equals(contentType)) return "webp";
+            return "bin";
+        }
+        return switch (ext) {
+            case "jpeg" -> "jpg";
+            default -> ext;
+        };
+    }
+
+    /** 저장된 contractUrl(우리 버킷 URL)로부터, 짧게 유효한 다운로드 URL 발급 */
+    public String presignContractDownload(String contractUrl, Duration ttl, String downloadName) {
+        if (contractUrl == null || contractUrl.isBlank())
+            throw new IllegalArgumentException("계약서가 없습니다.");
+
+        // DB에 URL을 저장해뒀으므로 URL→key 로 변환
+        String key = extractKeyFromOurUrl(contractUrl);
+        if (key == null || key.isBlank())
+            throw new IllegalArgumentException("잘못된 계약서 URL 형식입니다.");
+
+        // 파일명 UTF-8 인코딩 (RFC 5987)
+        String encoded = URLEncoder.encode(downloadName, StandardCharsets.UTF_8).replace("+", "%20");
+        String contentDisposition = "attachment; filename*=UTF-8''" + encoded;
+
+        GetObjectRequest get = GetObjectRequest.builder()
+                .bucket(props.getBucket())
+                .key(key)
+                .responseContentType("application/octet-stream")
+                .responseContentDisposition(contentDisposition)
+                .build();
+
+        PresignedGetObjectRequest pre = presigner.presignGetObject(b -> b
+                .getObjectRequest(get)
+                .signatureDuration(ttl));
+
+        return pre.url().toString();
+    }
+
+    /** https://{bucket}.{host}/{key} → {key} */
+    private String extractKeyFromOurUrl(String url) {
+        try {
+            URI u = URI.create(url);
+            String host = u.getHost(); // e.g. <bucket>.kr.object.ncloudstorage.com
+            if (host != null && host.startsWith(props.getBucket() + ".")) {
+                return u.getPath().replaceFirst("^/+", ""); // leading slash 제거
+            }
+            // path-style 등 다른 형식도 허용
+            String prefix = props.getEndpoint().replaceAll("/+$","") + "/" + props.getBucket() + "/";
+            if (url.startsWith(prefix)) {
+                return url.substring(prefix.length());
+            }
+        } catch (Exception ignore) {}
+        return null;
+    }
+
 }

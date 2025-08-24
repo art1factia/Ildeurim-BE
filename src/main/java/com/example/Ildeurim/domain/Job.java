@@ -37,9 +37,11 @@ public class Job extends BaseEntity {
     @Column(columnDefinition = "json", nullable = true)
     private String contractCore; // 계약서 요약 JSON
 
-    @OneToOne
-    @JoinColumn(name = "applicationId", nullable = false)
+    // Job.java (owning side)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "applicationId", nullable = false, unique = true) // ★ unique로 1:1 보장
     private Application application;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="workerId", nullable = false)

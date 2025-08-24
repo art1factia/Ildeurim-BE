@@ -126,8 +126,8 @@ public class JobPost extends BaseEntity {
     private Set<Application> applications; // 지원자 리스트
 
     @Convert(converter = QuestionListJsonConverter.class)
-//    @Column(columnDefinition = "jsonb")
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "jsonb")
+//    @Column(columnDefinition = "text")
     private QuestionList questionList;
 
 

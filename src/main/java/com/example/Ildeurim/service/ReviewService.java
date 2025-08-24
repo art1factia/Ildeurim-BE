@@ -5,16 +5,14 @@ import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.commons.enums.review.EvaluationAnswer;
 import com.example.Ildeurim.commons.enums.review.EvaluationType;
 import com.example.Ildeurim.commons.enums.review.Hashtag;
+import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Employer;
 import com.example.Ildeurim.domain.Review;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.review.ReviewCreateReq;
 import com.example.Ildeurim.dto.review.ReviewRes;
 import com.example.Ildeurim.dto.review.ReviewSummaryRes;
-import com.example.Ildeurim.repository.EmployerRepository;
-import com.example.Ildeurim.repository.JobRepository;
-import com.example.Ildeurim.repository.ReviewRepository;
-import com.example.Ildeurim.repository.WorkerRepository;
+import com.example.Ildeurim.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,15 +28,16 @@ public class ReviewService {
     private final WorkerRepository workerRepository;
     private final EmployerRepository employerRepository;
     private final JobRepository jobRepository;
+    private final ApplicationRepository applicationRepository;
 
     //리뷰 생성
     @Transactional
-    public ReviewRes createReview(ReviewCreateReq req)  {
+    public ReviewRes createReview(ReviewCreateReq req) {
         // 로그인한 사용자(worker) 확인
         Long workerId = AuthContext.userId()
                 .orElseThrow(() -> new SecurityException("인증되지 않은 사용자입니다."));
 
-        UserType  userType = AuthContext.userType()
+        UserType userType = AuthContext.userType()
                 .orElseThrow(() -> new SecurityException("사용자 유형을 알 수 없습니다."));
 
         // 근로자만 작성 가능
@@ -55,8 +54,10 @@ public class ReviewService {
         Employer employer = employerRepository.findById(req.employerId())
                 .orElseThrow(() -> new IllegalArgumentException("찾을 수 없는 고용인입니다"));
 
+        Application application = applicationRepository.findByWorker_IdAndJob_Id(workerId, req.jobId())
+                .orElseThrow(() -> new IllegalStateException("해당 고용주의 모집공고에 지원한 이력이 없습니다."));
         // 근무 이력 확인
-        boolean hasWorked = jobRepository.existsByWorkerAndEmployer(workerId, employer.getId());
+        boolean hasWorked = jobRepository.existsByWorker_IdAndApplication_Id(workerId, application.getId());
         if (!hasWorked) {
             throw new IllegalStateException("해당 고용주 밑에서 근무한 이력이 없습니다. 리뷰를 작성할 수 없습니다.");
         }

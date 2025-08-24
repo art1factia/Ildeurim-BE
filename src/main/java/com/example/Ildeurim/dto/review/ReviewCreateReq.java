@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 
 public record ReviewCreateReq(
+        @NotNull Long jobId,
         @NotNull Long employerId,
         @NotNull Map<String, Integer> answers,
         List<String> hashtags

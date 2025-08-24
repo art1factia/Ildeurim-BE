@@ -22,144 +22,177 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ env.JDK_VERSION }}
           cache: gradle
-
-      - name: Show repo layout (debug)
-        run: |
-          pwd
-          ls -al
-          echo "---- gradle files ----"
-          find . -maxdepth 3 -type f -name "build.gradle*" -o -name "settings.gradle*" -print
-          echo "---- gradle projects ----"
-          ./gradlew projects || true
 
       - name: Build (Gradle)
         run: |
           chmod +x gradlew
-          # 테스트 실패에 막히지 않으려면 -x test 를 사용 (필요시 제거)
+          # 필요시 테스트 포함: ./gradlew clean bootJar
           ./gradlew --no-daemon clean bootJar -x test
 
-      # (A) 소스 확인
-      - name: Show source index.html (repo)
-        run: |
-          echo "=== src/main/resources/static/index.html (repo) ==="
-          sed -n '1,40p' src/main/resources/static/index.html || true
-
-      # (B) 빌드 아웃풋 리소스 확인 (멀티모듈 대응)
-      - name: Show processed resource (build outputs)
-        run: |
-          echo "=== any */build/resources/main/static/index.html ==="
-          F=$(find . -path "*/build/resources/main/static/index.html" | head -n1)
-          if [ -n "$F" ]; then
-            echo "Found at: $F"
-            sed -n '1,40p' "$F"
-          else
-            echo "NO processed index.html found"
-          fi
-
-      # (C) JAR 내부 확인 (멀티모듈 대응)
-      - name: Show index.html inside jar
-        run: |
-          set -e
-          JAR=$(find . -path "*/build/libs/*.jar" -type f ! -name "*plain.jar" | head -n1)
-          if [ -z "$JAR" ]; then
-            echo "No jar found under */build/libs"; exit 1
-          fi
-          echo "Using JAR: $JAR"
-          unzip -p "$JAR" BOOT-INF/classes/static/index.html | sed -n '1,40p' || true
-
-      - name: Upload artifact
+      - name: Upload artifact (jar)
         uses: actions/upload-artifact@v4
         with:
           name: app-jar
-          path: |
-            **/build/libs/*.jar
+          path: "**/build/libs/*.jar"
           if-no-files-found: error
 
-  deploy:
+  migrate:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      # 1) 빌드 아티팩트 다운로드 (build job에서 name: app-jar 로 업로드했던 것)
-      - name: Download artifact
+      - uses: actions/checkout@v4
+
+      # Flyway Docker 로컬 실행 (migrations: src/main/resources/db/migration)
+      - name: Run Flyway migrations on Neon (Docker)
+        env:
+          NEON_JDBC_URL: ${{ secrets.NEON_JDBC_URL }}
+          NEON_USERNAME: ${{ secrets.NEON_USERNAME }}
+          NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+        run: |
+          # GitHub 호스트에서 Docker 사용
+          docker pull flyway/flyway:latest
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/flyway/sql" \
+            flyway/flyway:latest \
+            -url="${NEON_JDBC_URL}" \
+            -user="${NEON_USERNAME}" \
+            -password="${NEON_PASSWORD}" \
+            -baselineOnMigrate=true \
+            -locations=filesystem:/flyway/sql/src/main/resources/db/migration \
+            migrate
+
+  deploy:
+    needs: [build, migrate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact (jar)
         uses: actions/download-artifact@v4
         with:
           name: app-jar
           path: .
 
-      # 2) 워크스페이스 점검 (경로 문제 디버그용)
-      - name: Show workspace after download (debug)
+      - name: Normalize JAR → deploy/app.jar
         run: |
-          pwd
-          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-          ls -al
-          find . -maxdepth 3 -type f -name "*.jar" -print
-
-      # 3) JAR → deploy/app.jar
-      - name: Normalize jar into deploy folder
-        run: |
-          set -euo pipefail
-          JAR=$(find . -type f -name "*.jar" | head -n1)
-          [ -n "${JAR:-}" ] || (echo "No JAR found"; exit 1)
+          set -e
+          JAR=$(find . -type f -name "*.jar" ! -name "*plain.jar" | head -n1)
+          [ -n "$JAR" ] || (echo "No jar found" && exit 1)
           mkdir -p deploy
           cp -f "$JAR" deploy/app.jar
-          ls -al deploy
 
-      # 4) YML → deploy/application-prod.yml  (← 경로 통일!!)
-      - name: Prepare application-prod.yml (placeholder)
+      # 여기서 서버에 둘 application.yml 을 Secrets로 생성
+      - name: Prepare application.yml (prod)
+        env:
+          NEON_JDBC_URL: ${{ secrets.NEON_JDBC_URL }}
+          NEON_USERNAME: ${{ secrets.NEON_USERNAME }}
+          NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
+          NCP_SECRET_KEY: ${{ secrets.NCP_SECRET_KEY }}
         run: |
           mkdir -p deploy
-          cat > deploy/application-prod.yml << 'EOF'
-          # prod config placeholder
-          EOF
-          ls -al deploy
+          cat > deploy/application.yml << 'EOF'
+          spring:
+            application:
+              name: Ildeurim
+            servlet:
+              multipart:
+                max-file-size: 15MB
+                max-request-size: 15MB
+                file-size-threshold: 0
 
-      # 5) 존재 검증 (deploy 안만 검사)
+            datasource:
+              url: ${NEON_JDBC_URL}
+              username: ${NEON_USERNAME}
+              password: ${NEON_PASSWORD}
+              hikari:
+                maximum-pool-size: 10
+                minimum-idle: 0
+                idle-timeout: 60000
+                data-source-properties:
+                  preferQueryMode: simple
+
+            jpa:
+              hibernate:
+                ddl-auto: validate   # prod는 validate 권장
+              properties:
+                hibernate:
+                  dialect: org.hibernate.dialect.PostgreSQLDialect
+
+            flyway:
+              enabled: true
+              baseline-on-migrate: true
+              locations: classpath:db/migration
+
+          server:
+            port: 8080
+
+          jwt:
+            secret: ${JWT_SECRET}
+            expMin: 60
+
+          ncp:
+            storage:
+              region: kr-standard
+              endpoint: https://kr.object.ncloudstorage.com
+              bucket: ildeurim-storage
+              access-key: ${NCP_ACCESS_KEY}
+              secret-key: ${NCP_SECRET_KEY}
+          EOF
+
       - name: Verify files exist (fail fast)
         run: |
-          set -euo pipefail
-          for f in deploy/app.jar deploy/application-prod.yml; do
+          for f in deploy/app.jar deploy/application.yml; do
             [ -s "$f" ] || (echo "Missing or empty: $f" && exit 1)
             echo "OK: $f"
           done
-      # scp 전: 러너의 JAR 해시
-      - name: Hash of jar (runner)
-        run: sha256sum deploy/app.jar || sha1sum deploy/app.jar
 
-      # 7) 파일 전송 — 상대 경로, 와일드카드로 간단하게
       - name: Copy to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "deploy/app.jar,deploy/application-prod.yml"
+          source: "deploy/app.jar,deploy/application.yml"
           target: ${{ secrets.SERVER_APP_DIR }}
           strip_components: 1
           overwrite: true
-          debug: true
-      # scp 후: 서버의 JAR 해시
-      - name: Hash of jar (server)
+      - name: Write .env and link to systemd
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            sha256sum ${{ secrets.SERVER_APP_DIR }}/app.jar || sha1sum ${{ secrets.SERVER_APP_DIR }}/app.jar
-            ls -al ${{ secrets.SERVER_APP_DIR }}/app.jar
+            set -e
+            mkdir -p ${{ secrets.SERVER_APP_DIR }}
+            # 1) .env 생성 (레포 시크릿 값 주입)
+            cat > ${{ secrets.SERVER_APP_DIR }}/.env <<'EOF'
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NEON_JDBC_URL=${{ secrets.NEON_JDBC_URL }}
+            NEON_USERNAME=${{ secrets.NEON_USERNAME }}
+            NEON_PASSWORD=${{ secrets.NEON_PASSWORD }}
+            NCP_ACCESS_KEY=${{ secrets.NCP_ACCESS_KEY }}
+            NCP_SECRET_KEY=${{ secrets.NCP_SECRET_KEY }}
+            EOF
+            chmod 600 ${{ secrets.SERVER_APP_DIR }}/.env
+            
+            # 2) systemd drop-in 으로 EnvironmentFile 연결 (없으면 생성/있으면 갱신)
+            sudo mkdir -p /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d
+            sudo bash -c 'cat > /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d/override.conf <<EOC
+            [Service]
+            EnvironmentFile=${{ secrets.SERVER_APP_DIR }}/.env
+            EOC'
+            # 유닛 재로딩 (첫 설정/변경 시 필수)
+            sudo systemctl daemon-reload
 
-
-        # 8) 서비스 재시작 및 상태 확인
-      - name: Restart service
+      - name: Restart service (systemd)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          # port: 22
           script: |
             set -e
             cd ${{ secrets.SERVER_APP_DIR }}
