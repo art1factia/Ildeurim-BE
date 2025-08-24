@@ -156,42 +156,55 @@ ALTER TABLE job_post
     ADD COLUMN IF NOT EXISTS question_list         JSONB,
     ADD COLUMN IF NOT EXISTS save_question_list    BOOLEAN DEFAULT FALSE;
 
--- camelCase → snake_case 값 이관(있을 때만)
-DO $$ BEGIN
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employerid')
-               THEN (EXECUTE 'UPDATE job_post SET employer_id = COALESCE(employer_id, employerid)') END;
+-- camelCase → snake_case 값 이관(있을 때만)  ✅ 수정 버전
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employerid') THEN
+    EXECUTE 'UPDATE job_post SET employer_id = COALESCE(employer_id, employerid) WHERE employerid IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='worktype')
-               THEN (EXECUTE 'UPDATE job_post SET work_type = COALESCE(work_type, worktype)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='worktype') THEN
+    EXECUTE 'UPDATE job_post SET work_type = COALESCE(work_type, worktype) WHERE worktype IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workdayscount')
-               THEN (EXECUTE 'UPDATE job_post SET work_days_count = COALESCE(work_days_count, workdayscount)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workdayscount') THEN
+    EXECUTE 'UPDATE job_post SET work_days_count = COALESCE(work_days_count, workdayscount) WHERE workdayscount IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='educationrequirement')
-               THEN (EXECUTE 'UPDATE job_post SET education_requirement = COALESCE(education_requirement, educationrequirement)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='educationrequirement') THEN
+    EXECUTE 'UPDATE job_post SET education_requirement = COALESCE(education_requirement, educationrequirement) WHERE educationrequirement IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employmenttype')
-               THEN (EXECUTE 'UPDATE job_post SET employment_type = COALESCE(employment_type, employmenttype)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employmenttype') THEN
+    EXECUTE 'UPDATE job_post SET employment_type = COALESCE(employment_type, employmenttype) WHERE employmenttype IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='jobfield')
-               THEN (EXECUTE 'UPDATE job_post SET job_field = COALESCE(job_field, jobfield)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='jobfield') THEN
+    EXECUTE 'UPDATE job_post SET job_field = COALESCE(job_field, jobfield) WHERE jobfield IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workplace')
-               THEN (EXECUTE 'UPDATE job_post SET work_place = COALESCE(work_place, workplace)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workplace') THEN
+    EXECUTE 'UPDATE job_post SET work_place = COALESCE(work_place, workplace) WHERE workplace IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workstarttime')
-               THEN (EXECUTE 'UPDATE job_post SET work_start_time = COALESCE(work_start_time, workstarttime)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workstarttime') THEN
+    EXECUTE 'UPDATE job_post SET work_start_time = COALESCE(work_start_time, workstarttime) WHERE workstarttime IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workendtime')
-               THEN (EXECUTE 'UPDATE job_post SET work_end_time = COALESCE(work_end_time, workendtime)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workendtime') THEN
+    EXECUTE 'UPDATE job_post SET work_end_time = COALESCE(work_end_time, workendtime) WHERE workendtime IS NOT NULL';
+END IF;
 
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='questionlist')
-               THEN (EXECUTE 'UPDATE job_post SET question_list = COALESCE(question_list, questionlist)') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='questionlist') THEN
+    EXECUTE 'UPDATE job_post SET question_list = COALESCE(question_list, questionlist) WHERE questionlist IS NOT NULL';
+END IF;
 
   -- expirydate(date) → expiry_date(timestamp)
-  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='expirydate')
-               THEN (EXECUTE 'UPDATE job_post SET expiry_date = COALESCE(expiry_date, expirydate::timestamp) WHERE expiry_date IS NULL') END;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='expirydate') THEN
+    EXECUTE 'UPDATE job_post SET expiry_date = COALESCE(expiry_date, expirydate::timestamp) WHERE expiry_date IS NULL';
+END IF;
 END $$;
+
 
 -- start_date가 없으면 created_at로 보정
 UPDATE job_post SET start_date = COALESCE(start_date, created_at) WHERE start_date IS NULL;
