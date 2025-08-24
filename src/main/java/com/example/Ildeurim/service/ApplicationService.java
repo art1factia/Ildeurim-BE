@@ -73,6 +73,26 @@ public class ApplicationService {
         applicationRepository.save(newApplication);
         return newApplication.getId();
     }
+    @Transactional
+    public ApplicationRes confirmPhoneApplication(Long id){
+        // 1. JWT 토큰에서 현재 사용자 ID를 가져옵니다.
+        Long workerId = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new AccessDeniedException("사용자가 근로자가 아닙니다."));
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(()-> new EntityNotFoundException("지원서가 존재하지 않습니다."));
+        if (application.getApplyMethod() != ApplyMethod.PHONE) {
+            throw new IllegalStateException("전화 지원으로 접수된 지원서가 아닙니다.");
+        }
+        if (application.getApplicationStatus() != ApplicationStatus.DRAFT) {
+            throw new IllegalStateException("임시 저장된 전화 지원이 아닙니다.");
+        }
+        application.setApplicationStatus(ApplicationStatus.NEEDINTERVIEW);
+        applicationRepository.save(application);
+        return ApplicationRes.of(application);
+
+    }
 
     /* 임시 저장, 지원서 수정 */
     @Transactional
