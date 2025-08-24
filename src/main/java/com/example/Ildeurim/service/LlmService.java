@@ -16,8 +16,8 @@ public class LlmService {
     private final OpenAIClient client;
     private final ObjectMapper om = new ObjectMapper();
 
-    public LlmService(OpenAiClientFactory f) {
-        this.client = f.client();
+    public LlmService(OpenAIClient client) {   // <- 팩토리 대신 클라이언트 자체를 주입
+        this.client = client;
     }
 
     /** 시스템+유저 메시지를 한 번에 입력하는 헬퍼 */
