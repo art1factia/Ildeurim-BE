@@ -56,32 +56,33 @@ public class ApplicationService {
 
         // 유효한 공고(OPEN 상태)인지 확인
         if (jobPost.getStatus() != JobPostStatus.OPEN) {
-            throw new JobPostClosedException(jobPostId,"해당 공고는 채용 중이 아닙니다.");
+            throw new JobPostClosedException(jobPostId, "해당 공고는 채용 중이 아닙니다.");
         }
 
         // 중복 지원서 여부 확인
         boolean exists = applicationRepository.existsByWorkerIdAndJobPostIdAndApplicationStatusIn(
                 workerId,
                 jobPostId,
-                List.of(ApplicationStatus.DRAFT, ApplicationStatus.NEEDINTERVIEW,ApplicationStatus.PENDING)
+                List.of(ApplicationStatus.DRAFT, ApplicationStatus.NEEDINTERVIEW, ApplicationStatus.PENDING)
         );
         if (exists) {
-            throw new DuplicateApplicationException(workerId,jobPostId,"이미 지원서가 존재합니다.");
+            throw new DuplicateApplicationException(workerId, jobPostId, "이미 지원서가 존재합니다.");
         }
 
         Application newApplication = req.toEntity(jobPost, worker);
         applicationRepository.save(newApplication);
         return newApplication.getId();
     }
+
     @Transactional
-    public ApplicationRes confirmPhoneApplication(Long id){
+    public ApplicationRes confirmPhoneApplication(Long id) {
         // 1. JWT 토큰에서 현재 사용자 ID를 가져옵니다.
         Long workerId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new AccessDeniedException("사용자가 근로자가 아닙니다."));
         Application application = applicationRepository.findById(id)
-                .orElseThrow(()-> new EntityNotFoundException("지원서가 존재하지 않습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("지원서가 존재하지 않습니다."));
         if (application.getApplyMethod() != ApplyMethod.PHONE) {
             throw new IllegalStateException("전화 지원으로 접수된 지원서가 아닙니다.");
         }
@@ -223,7 +224,7 @@ public class ApplicationService {
         boolean exists = applicationRepository.existsByWorkerIdAndJobPostIdAndApplicationStatusIn(
                 workerId,
                 jobPostId,
-                List.of(ApplicationStatus.DRAFT, ApplicationStatus.DRAFT,ApplicationStatus.PENDING)
+                List.of(ApplicationStatus.DRAFT, ApplicationStatus.DRAFT, ApplicationStatus.PENDING)
         );
         if (exists) {
             throw new DuplicateApplicationException(workerId, jobPostId, "이미 지원서가 존재합니다.");
@@ -239,14 +240,14 @@ public class ApplicationService {
                 .answers(AnswerList.empty()) // 답변 리스트 없음
                 .build();
 
-        newApplication= applicationRepository.save(newApplication);
+        newApplication = applicationRepository.save(newApplication);
         return ApplicationRes.of(newApplication);
     }
 
 
     /*--------------------- 구직자의 지원 조회 관련 서비스 ---------------------*/
     public List<SimpleApplicationRes> getMyApplications() {
-       //1. 사용자 아이디 가져오기
+        //1. 사용자 아이디 가져오기
         Long workerId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
@@ -291,7 +292,7 @@ public class ApplicationService {
         Employer employer = employerRepository.findById(userId)
                 .orElseThrow(() -> new AccessDeniedException("사용자가 고용주가 아닙니다."));
         JobPost jobPost = jobPostRepository.findById(jobPostId)
-                .orElseThrow(()-> new EntityNotFoundException("공고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("공고를 찾을 수 없습니다."));
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
         if (!isMine) throw new AccessDeniedException("모집 공고를 조회할 권한이 없습니다.");
 
@@ -307,20 +308,30 @@ public class ApplicationService {
     /*지원자 상태 변환*/
     @Transactional
     public void updateApplicationStatus(Long applicationId, ApplicationStatus newStatus) {
-        // 1. 고용주 ID 가져오기
-        Long employerId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
-
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException("지원서를 찾을 수 없습니다."));
-
-        // 2. 현재 고용주 ID와 모집공고의 고용주 ID 비교
-        boolean isOwner = application.getJobPost().getEmployer().getId().equals(employerId);
-        if (!isOwner) {
-            throw new AccessDeniedException("자원 접근 권한이 없습니다.");
+        Long user = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+        if (newStatus == ApplicationStatus.HIRED) {
+            if (application.getApplicationStatus() != ApplicationStatus.ACCEPTED) {
+                throw new IllegalArgumentException("탈락된 지원서입니다.");
+            }
+            Worker worker = workerRepository.findById(user)
+                    .orElseThrow(() -> {
+                        throw new AccessDeniedException("고용주는 채용확정을 할 수 없습니다.");
+                    });
+            application.setApplicationStatus(newStatus);
+        } else {
+            Employer employer = employerRepository.findById(user)
+                    .orElseThrow(() -> {
+                        throw new AccessDeniedException("고용인은 지원서의 상태를 변경할 수 없습니다.");
+                    });
+            if (!application.getJobPost().getEmployer().getId().equals(employer.getId())) {
+                throw new AccessDeniedException("해당 지원서의 상태를 변경할 권한이 없습니다.");
+            }
+            application.setApplicationStatus(newStatus);
         }
-
-        application.updateStatus(newStatus);
+        application = applicationRepository.save(application);
     }
 
 
