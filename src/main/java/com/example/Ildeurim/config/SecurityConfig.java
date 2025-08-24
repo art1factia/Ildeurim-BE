@@ -54,22 +54,27 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
 
-        // 프론트 개발 도메인/포트
-        cfg.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:5176",
-                "http://localhost:5177",
-                // 배포(또는 테스트) 도메인 필요 시 추가
-                "https://app.184.168.123.81.nip.io"
+        // 자격증명(쿠키/인증) 허용 시, Origin은 반드시 구체적이거나 패턴이어야 합니다.
+        cfg.setAllowCredentials(true);
+
+        // ★ Origin은 '정확한 값' 또는 패턴으로 제한 (와일드카드 '*' 금지 when allowCredentials=true)
+        cfg.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://*.nip.io"         // 예: https://app.81.123.168.184.nip.io 허용
+                // 필요 시 실제 배포 도메인 추가
         ));
 
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("token","Content-Type"));
-        cfg.setExposedHeaders(List.of("token"));
-        cfg.setAllowCredentials(true); // 쿠키/인증정보 사용 시 true
+        // ★ 메서드/헤더는 폭넓게 허용 (사전요청 403 방지)
+        cfg.addAllowedMethod("*");
+        cfg.addAllowedHeader("*");     // ← token 포함, 기타 커스텀 헤더/프레임워크 헤더도 모두 허용
+
+        // 응답에서 노출할 헤더(브라우저 JS가 읽을 수 있게)
+        cfg.setExposedHeaders(List.of("token","Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
     }
+
 }
