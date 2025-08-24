@@ -107,14 +107,6 @@ public class JobPost extends BaseEntity {
     @Column(nullable = false)
     private WorkPlace workPlace;
 
-    @Enumerated(EnumType.STRING)
-    @ElementCollection
-    @CollectionTable(
-            name = "jobPostJobFields",
-            joinColumns = @JoinColumn(name = "jobPostId")
-    )
-    private Set<ApplyMethod> applyMethod;
-
     @Column(nullable = false)
     private Boolean saveQuestionList=false;  //모집 공고를 계속 이용할건지
 
