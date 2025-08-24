@@ -54,8 +54,8 @@ public class Application extends BaseEntity {
     private Job job;
 
     @Convert(converter = AnswerListJsonConverter.class)
-//    @Column(columnDefinition = "jsonb")
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "jsonb")
+//    @Column(columnDefinition = "text")
     private AnswerList answers;
 
     public void submit() {
