@@ -1,7 +1,9 @@
 package com.example.Ildeurim.service;
-
+import com.example.Ildeurim.commons.converter.DateParsers;
 import com.example.Ildeurim.auth.AuthContext;
 import com.example.Ildeurim.commons.enums.UserType;
+import com.example.Ildeurim.commons.enums.jobpost.JobField;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.Career;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.career.CareerCreateReq;
@@ -42,18 +44,20 @@ public class CareerService {
         Worker worker = workerRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Worker not found"));
 
+        LocalDate startDate = DateParsers.parseLocalDate(req.startDate());
+        LocalDate endDate = DateParsers.parseLocalDate(req.endDate());
         // 날짜 순서 검증
-        validateDates(req.startDate(), req.endDate());
+        validateDates(startDate, endDate);
 
         Career career = Career.builder()
                 .title(req.title())
                 .companyName(req.companyName())
-                .startDate(req.startDate())
-                .endDate(req.endDate())
-                .workplace(req.workplace())
+                .startDate(startDate)
+                .endDate(endDate)
+                .workplace(WorkPlace.fromLabel(req.workplace()))
                 .mainDuties(req.mainDuties())
                 .isOpening(req.isOpening())
-                .jobField(req.jobField())
+                .jobField(JobField.fromLabel(req.jobField()))
                 .worker(worker)
                 .build();
 
@@ -115,12 +119,12 @@ public class CareerService {
         // 부분 수정 (null 무시)
         if (req.title() != null) career.setTitle(req.title());
         if (req.companyName() != null) career.setCompanyName(req.companyName());
-        if (req.startDate() != null) career.setStartDate(req.startDate());
-        if (req.endDate() != null) career.setEndDate(req.endDate());
-        if (req.workplace() != null) career.setWorkplace(req.workplace());
+        if (req.startDate() != null) career.setStartDate(DateParsers.parseLocalDate(req.startDate()));
+        if (req.endDate() != null) career.setEndDate(DateParsers.parseLocalDate(req.endDate()));
+        if (req.workplace() != null) career.setWorkplace(WorkPlace.fromLabelNullable(req.workplace()));
         if (req.mainDuties() != null) career.setMainDuties(req.mainDuties());
         if (req.isOpening() != null) career.setIsOpening(req.isOpening());
-        if (req.jobField() != null) career.setJobField(req.jobField());
+        if (req.jobField() != null) career.setJobField(JobField.fromLabelNullable(req.jobField()));
 
         // 머지 후 날짜 순서 검증
         validateDates(career.getStartDate(), career.getEndDate());

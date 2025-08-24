@@ -1,12 +1,16 @@
 package com.example.Ildeurim.service;
 
 import com.example.Ildeurim.auth.AuthContext;
+import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
+import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Job;
 import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.job.JobContractReq;
 import com.example.Ildeurim.dto.job.JobCreateReq;
 import com.example.Ildeurim.dto.job.JobRes;
 import com.example.Ildeurim.dto.job.JobUpdateReq;
+import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.repository.JobRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +29,8 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final WorkerRepository workerRepository;
+    private final ObjectStorageService storage;
+    private final ApplicationRepository applicationRepository;
 
     // 근로 생성 (isWorking 기본 true)
     @Transactional
@@ -34,14 +41,17 @@ public class JobService {
         // 본인 Worker를 인증 컨텍스트로 식별 (ERD 필드만 사용: 요청 바디에 workerId 불필요)
         Worker worker = workerRepository.findById(loginUserId)
                 .orElseThrow(() -> new EntityNotFoundException("worker not found"));
-
+        Application application = applicationRepository.findById(req.applicationId())
+                .orElseThrow(() -> new EntityNotFoundException("application not found"));
+        if (!(application.getApplicationStatus().equals(ApplicationStatus.ACCEPTED))) {
+            throw new AccessDeniedException("application is not accepted");
+        }
         Job job = Job.builder()
                 .worker(worker)
+                .application(application)
                 .isWorking(true)                     // 기본값
                 .jobTitle(req.jobTitle())
-                .workPlace(req.workPlace())
-                .contractUrl(req.contractUrl())
-                .contractCore(req.contractCore())    // JSON 문자열
+                .workPlace(WorkPlace.fromLabel(req.workPlace()))
                 .build();
 
         job = jobRepository.save(job);
@@ -82,7 +92,7 @@ public class JobService {
         }
 
         if (req.jobTitle() != null) job.setJobTitle(req.jobTitle());
-        if (req.workPlace() != null) job.setWorkPlace(req.workPlace());
+        if (req.workPlace() != null) job.setWorkPlace(WorkPlace.fromLabelNullable(req.workPlace()));
         if (req.contractUrl() != null) job.setContractUrl(req.contractUrl());
         if (req.contractCore() != null) job.setContractCore(req.contractCore());
 
@@ -109,7 +119,7 @@ public class JobService {
 
     // 계약서 추가/수정
     @Transactional
-    public JobRes upsertContract(Long id, JobContractReq req) {
+    public JobRes upsertContract(Long id, MultipartFile file) {
         Long loginUserId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
 
@@ -119,9 +129,11 @@ public class JobService {
         if (!job.getWorker().getId().equals(loginUserId)) {
             throw new AccessDeniedException("no access to update contract");
         }
+        String newContractUrl = storage.uploadContract(job.getId(), file, job.getContractUrl());
 
-        job.setContractUrl(req.contractUrl());
-        job.setContractCore(req.contractCore());
+        job.setContractUrl(newContractUrl);
+        //TODO: contract 생성 GPT 연동
+//        job.setContractCore(req.contractCore());
 
         job = jobRepository.save(job);
         return toRes(job);
