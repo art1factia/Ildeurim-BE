@@ -90,6 +90,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
           NCP_SECRET_KEY: ${{ secrets.NCP_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           mkdir -p deploy
           cat > deploy/application.yml << 'EOF'
@@ -139,6 +140,13 @@ jobs:
               bucket: ildeurim-storage
               access-key: ${NCP_ACCESS_KEY}
               secret-key: ${NCP_SECRET_KEY}
+          openai:
+            api-key: ${OPENAI_API_KEY}
+        
+          app:
+            ocr:
+              enable: true
+              tesseractDataPath: /usr/share/tesseract-ocr/4.00/tessdata
           EOF
 
       - name: Verify files exist (fail fast)

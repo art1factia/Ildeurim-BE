@@ -1,39 +1,16 @@
 package com.example.Ildeurim.dto.job;
 
-import com.fasterxml.jackson.annotation.*;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
-public class ContractSummaryDto {
-    public String title;                        // 계약서 제목(있으면)
-    public Parties parties;
-    public Period period;
-    public Payment payment;
-    public List<String> obligations;            // 주요 의무
-    public List<String> restrictions;           // 금지/제한
-    public List<String> termination;            // 해지 조항 핵심
-    public List<String> confidentiality;        // 비밀유지 요점
-    public String governingLaw;                 // 준거법
-    public List<String> risks;                  // 리스크 포인트(요약)
-    public String executiveSummaryKo;           // 한국어 요약 5~8문장
-    public String extractionConfidence;         // "high|medium|low"
+public record ContractSummaryDto(
+        String abstraction, //한눈에보기,          // 3~4줄 요약
+        String duration, //계약기간,            // 예: "2025-01-01 ~ 2025-12-31(자동연장 없음)"
+        String workTimeInfo, //일하는시간과요일,    // 예: "월~금 09:00-18:00(휴게 1시간)"
+        String paymentType, //급여와지급방식,      // 예: "월급 200만원, 매월 25일"
+        String workLocation, //근무장소,            // 예: "서울 도봉구 OO로 12"
+        List<String> notice,//꼭알아두기,    // 5~8개, 쉬운 문장
+        List<String> caution,//주의할점,      // 분쟁/위약금/비밀유지 등 핵심 경고
+        String contact//문의방법;            // 전화/이메일 등 간단히
+) {
 
-    public static class Parties {
-        public Optional<String> partyA;
-        public Optional<String> partyB;
-        public Optional<String> partyAType; // 회사/개인 등
-        public Optional<String> partyBType;
-    }
-    public static class Period {
-        public Optional<LocalDate> effectiveDate;
-        public Optional<LocalDate> endDate;
-        public Optional<Boolean> autoRenewal;
-        public Optional<String> renewalTerm; // "1 year" 등 자연어
-    }
-    public static class Payment {
-        public Optional<String> currency;
-        public Optional<Double> totalAmount;
-        public Optional<String> schedule; // 분할/마일스톤 설명
-    }
 }
