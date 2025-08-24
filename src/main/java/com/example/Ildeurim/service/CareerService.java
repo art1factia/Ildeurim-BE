@@ -9,8 +9,10 @@ import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.career.CareerCreateReq;
 import com.example.Ildeurim.dto.career.CareerUpdateReq;
 import com.example.Ildeurim.dto.career.CareerRes;
+import com.example.Ildeurim.exception.career.InvalidDateRangeException;
 import com.example.Ildeurim.repository.CareerRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,17 +34,17 @@ public class CareerService {
     @Transactional
     public CareerRes create(CareerCreateReq req) {
         Long userId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 않습니다."));
 
         if (!userType.equals(UserType.WORKER)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not worker");
+            throw new AccessDeniedException("구직자가 아니므로 이 작업을 수행할 수 없습니다.");
         }
 
         // Worker 존재 여부 확인
         Worker worker = workerRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Worker not found"));
+                .orElseThrow(() -> new IllegalArgumentException("찾을 수 없는 구직자입니다."));
 
         LocalDate startDate = DateParsers.parseLocalDate(req.startDate());
         LocalDate endDate = DateParsers.parseLocalDate(req.endDate());
@@ -68,32 +70,32 @@ public class CareerService {
     @Transactional(readOnly = true)
     public List<CareerRes> getWorkerCareerList() {
         Long id = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 않습니다."));
         if (userType.equals(UserType.WORKER)) {
             List<Career> careerList = careerRepository.findByWorker_Id(id);
             return careerList.stream()
                     .map(CareerRes::from)
                     .toList(); // JDK 17 지원
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not worker");
+            throw new AccessDeniedException("구직자가 아니므로 이 작업을 수행할 수 없습니다.");
         }
     }
 
     @Transactional(readOnly = true)
     public List<CareerRes> getWorkerPublicCareerList(Long id) {
         Long userId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 않습니다."));
         if (userType.equals(UserType.EMPLOYER)) {
             List<Career> publicCareerList = careerRepository.findByWorker_IdAndIsOpening(id, true);
             return publicCareerList.stream()
                     .map(CareerRes::from)
                     .toList();
         } else {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not employer");
+            throw new AccessDeniedException("고용주가 아니므로 이 작업을 수행할 수 없습니다.");
         }
     }
 
@@ -101,19 +103,19 @@ public class CareerService {
     @Transactional
     public CareerRes update(Long id, CareerUpdateReq req) {
         Long userId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 않습니다."));
 
         if (!userType.equals(UserType.WORKER)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not worker");
+            throw new AccessDeniedException("구직자가 아니므로 이 작업을 수행할 수 없습니다.");
         }
 
         Career career = careerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Career not found"));
+                .orElseThrow(() -> new EntityNotFoundException("이력을 찾을 수 없습니다."));
 
         if (!career.getWorker().getId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot modify this career");
+            throw new AccessDeniedException("수정할 권한이 없습니다.");
         }
 
         // 부분 수정 (null 무시)
@@ -136,19 +138,19 @@ public class CareerService {
     @Transactional
     public void delete(Long id) {
         Long userId = AuthContext.userId()
-                .orElseThrow(() -> new AccessDeniedException("Unauthenticated"));
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않는 사용자입니다."));
         UserType userType = AuthContext.userType()
-                .orElseThrow(() -> new AccessDeniedException("Invalid userType"));
+                .orElseThrow(() -> new AccessDeniedException("사용자 유형이 유효하지 않습니다"));
 
         if (!userType.equals(UserType.WORKER)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "user type is not worker");
+            throw new AccessDeniedException("구직자가 아니므로 이 작업을 수행할 수 없습니다.");
         }
 
         Career career = careerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Career not found"));
+                .orElseThrow(() -> new EntityNotFoundException("이력을 찾을 수 없습니다."));
 
         if (!career.getWorker().getId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete this career");
+            throw new AccessDeniedException("이력을 삭제할 수 없습니다.");
         }
 
         careerRepository.delete(career);
@@ -158,10 +160,7 @@ public class CareerService {
     private void validateDates(LocalDate start, LocalDate end) {
         // null 여부는 DB/DTO(@NotNull)로 보장된다고 가정하고 순서만 검사
         if (end.isBefore(start)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "endDate cannot be before startDate"
-            );
+            throw new InvalidDateRangeException(start,end,"종료일이 시작일보다 앞설 수 없습니다.");
         }
     }
 }
