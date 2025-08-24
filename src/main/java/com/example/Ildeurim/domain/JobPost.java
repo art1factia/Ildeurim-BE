@@ -79,7 +79,7 @@ public class JobPost extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime startDate;       // 모집 시작일
 
-    @Column(nullable = false)
+    @Column
     private LocalDateTime expiryDate;      // 마감일
 
     @Enumerated(EnumType.STRING)
