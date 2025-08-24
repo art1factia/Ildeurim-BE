@@ -28,8 +28,9 @@ dependencies {
 	implementation("software.amazon.awssdk:s3")
 
 	// DB
-	implementation 'org.flywaydb:flyway-core'
-	runtimeOnly 'org.postgresql:postgresql'
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.flywaydb:flyway-core")
+	runtimeOnly("org.postgresql:postgresql")
 
 	// JWT (JJWT)
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
