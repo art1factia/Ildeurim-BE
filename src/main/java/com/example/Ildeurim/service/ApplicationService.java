@@ -223,7 +223,7 @@ public class ApplicationService {
         boolean exists = applicationRepository.existsByWorkerIdAndJobPostIdAndApplicationStatusIn(
                 workerId,
                 jobPostId,
-                List.of(ApplicationStatus.DRAFT, ApplicationStatus.NEEDINTERVIEW,ApplicationStatus.PENDING)
+                List.of(ApplicationStatus.DRAFT, ApplicationStatus.DRAFT,ApplicationStatus.PENDING)
         );
         if (exists) {
             throw new DuplicateApplicationException(workerId, jobPostId, "이미 지원서가 존재합니다.");
