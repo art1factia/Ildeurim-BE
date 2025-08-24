@@ -16,6 +16,7 @@ import java.util.*;
  * - options: null이면 빈 리스트로, null/공백 요소 제거 + 중복 제거(순서 유지)
  */
 public record JobPostQuestionListUpdateReq(
+        Boolean saveQuestionList,
         List<QuestionItem> items
 ) {
     public static QuestionList toQuestionList(JobPostQuestionListUpdateReq req) {

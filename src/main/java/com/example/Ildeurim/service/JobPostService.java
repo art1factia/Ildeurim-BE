@@ -119,8 +119,13 @@ public class JobPostService {
                 .orElseThrow(()-> new JobPostNotFoundException(id,"해당 공고를 찾을 수 없습니다."));
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
         if (!isMine) throw new JobPostPermissionException(id,"공고 질문을 수정할 권한이 없습니다.");
+
         jobPost.setQuestionList(JobPostQuestionListUpdateReq.toQuestionList(req));
         jobPost = jobPostRepository.save(jobPost);
+        if (req.saveQuestionList()) {
+            employer.setDefaultQuestionList(jobPost.getQuestionList());
+            employerRepository.save(employer);
+        }
         return JobPostRes.from(jobPost);
     }
 
