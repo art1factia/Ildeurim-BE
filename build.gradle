@@ -26,7 +26,7 @@ dependencies {
 	implementation 'com.vladmihalcea:hibernate-types-60:2.21.1'
 	implementation(platform("software.amazon.awssdk:bom:2.32.29"))
 	implementation("software.amazon.awssdk:s3")
-
+	implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.31'
     implementation("com.openai:openai-java:3.1.2")
 
 	// DB

@@ -2,6 +2,7 @@ package com.example.Ildeurim.dto.employer;
 
 import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import com.example.Ildeurim.domain.Employer;
+import com.example.Ildeurim.domain.quickAnswer.QuestionList;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -15,7 +16,8 @@ public record EmployerRes(
         String companyName,
         String companyLocation,
         String companyNumber,
-        List<JobField> jobFields
+        List<JobField> jobFields,
+        QuestionList questionList
 ) {
     public static EmployerRes from(Employer e) {
         return new EmployerRes(
@@ -27,7 +29,8 @@ public record EmployerRes(
                 e.getCompanyName(),
                 e.getCompanyLocation(),
                 e.getCompanyNumber(),
-                e.getJobFields() != null ? List.copyOf(e.getJobFields()) : List.of()
+                e.getJobFields() != null ? List.copyOf(e.getJobFields()) : List.of(),
+                e.getDefaultQuestionList()
         );
     }
 
