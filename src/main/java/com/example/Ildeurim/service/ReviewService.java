@@ -86,7 +86,7 @@ public class ReviewService {
     @Transactional
     public ReviewSummaryRes getReview(Long employerId) {
         Employer employer = employerRepository.findById(employerId)
-                .orElseThrow(() -> new IllegalArgumentException("Employer not found"));
+                .orElseThrow(() -> new IllegalArgumentException("고용주를 찾을 수 없습니다."));
 
         List<Review> reviews = reviewRepository.findByEmployer(employer);
 

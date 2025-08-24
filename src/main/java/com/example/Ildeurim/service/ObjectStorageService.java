@@ -55,7 +55,7 @@ public class ObjectStorageService {
         try {
             s3.putObject(req, RequestBody.fromBytes(file.getBytes()));
         } catch (Exception e) {
-            throw new IllegalStateException("Object upload failed: " + e.getMessage(), e);
+            throw new IllegalStateException("업로드를 실패했습니다.: " + e.getMessage(), e);
         }
 
         // 이전 파일 정리(선택)
