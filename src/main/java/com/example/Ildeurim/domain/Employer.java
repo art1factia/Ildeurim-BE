@@ -74,8 +74,8 @@ public class Employer extends BaseEntity {
     private List<JobPost> jobPosts = new ArrayList<>();
 
     @Convert(converter = QuestionListJsonConverter.class)
-//  @Column(columnDefinition = "jsonb") // PostgreSQL이면 jsonb 추천
-    @Column(columnDefinition = "text")
+  @Column(columnDefinition = "jsonb") // PostgreSQL이면 jsonb 추천
+//    @Column(columnDefinition = "text")
     private QuestionList defaultQuestionList; // 기본 질문 세트
 
     @OneToMany(mappedBy = "employer")
