@@ -36,6 +36,7 @@ public class JobPostController {
         JobPostDetailRes res = jobPostService.getJobPost(id);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post", res));
     }
+
     @GetMapping("/{id}/applications")
     public ResponseEntity<ApiResponse> getJobPostApplications(@PathVariable long id) {
         List<ApplicationListRes> res = applicationService.getApplicantsList(id);

@@ -49,7 +49,7 @@ public class JobPostService {
     @Transactional(readOnly = true)
     public JobPostDetailRes getJobPost(long id) {
         JobPost jobPost = jobPostRepository.findById(id)
-                .orElseThrow(() -> new JobPostNotFoundException(id,"해당 ID의 게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id, "해당 ID의 게시글을 찾을 수 없습니다."));
         return JobPostDetailRes.of(jobPost);
     }
 
@@ -68,12 +68,25 @@ public class JobPostService {
     }
 
     @Transactional(readOnly = true)
-    public List<SimpleJobPostRes> getJobPostList(JobPostFilter req){
+    public List<SimpleJobPostRes> getJobPostList(JobPostFilter req) {
         List<JobPost> jobPostList = jobPostRepository.findAll(); //TODO: findAll 대신 필터 기반으로 변경
         List<SimpleJobPostRes> jobPostResList = jobPostList.stream()
                 .map(article -> SimpleJobPostRes.of(article))
                 .toList();
         return jobPostResList;
+    }
+
+    @Transactional(readOnly = true)
+    public List<JobPostRes> getMeJobPosts() {
+        Long id = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+        Employer employer = employerRepository.findById(id)
+                .orElseThrow(() -> new AccessDeniedException("고용주가 아닙니다."));
+
+        List<JobPost> jobPostList = jobPostRepository.findByEmployer_Id(employer.getId());
+        return jobPostList.stream()
+                .map(jobPost -> JobPostRes.from(jobPost))
+                .toList();
     }
 
     @Transactional
@@ -83,9 +96,9 @@ public class JobPostService {
         Employer employer = employerRepository.findById(userId)
                 .orElseThrow(() -> new AccessDeniedException("고용주가 아닙니다."));
         JobPost jobPost = jobPostRepository.findById(id)
-                .orElseThrow(()-> new JobPostNotFoundException(id,"해당 공고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id, "해당 공고를 찾을 수 없습니다."));
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
-        if (!isMine) throw new JobPostPermissionException(id,"공고를 수정할 권한이 없습니다.");
+        if (!isMine) throw new JobPostPermissionException(id, "공고를 수정할 권한이 없습니다.");
         //TODO: Cmd, Mapper 만들고 update와 연결
         JobPostUpdateCmd cmd = jobPostUpdateCmdMapper.toCmd(req, jobFieldMapper, applyMethodMapper, workDaysMapper, workPlaceMapper, dateMapper);
         jobPost.update(cmd);
@@ -101,25 +114,27 @@ public class JobPostService {
         Employer employer = employerRepository.findById(userId)
                 .orElseThrow(() -> new AccessDeniedException("고용주가 아닙니다."));
         JobPost jobPost = jobPostRepository.findById(id)
-                .orElseThrow(()-> new JobPostNotFoundException(id,"해당 공고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id, "해당 공고를 찾을 수 없습니다."));
         List<Application> applications = applicationRepository.findByJobPost_IdAndApplicationStatusIsNotAndApplicationStatusIsNot(id, ApplicationStatus.HIRED, ApplicationStatus.ACCEPTED);
-        applications.forEach(application -> {application.setApplicationStatus(ApplicationStatus.REJECTED);});
+        applications.forEach(application -> {
+            application.setApplicationStatus(ApplicationStatus.REJECTED);
+        });
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
-        if (!isMine) throw new JobPostPermissionException(id,"모집 공고를 수정할 권한이 없습니다.");
+        if (!isMine) throw new JobPostPermissionException(id, "모집 공고를 수정할 권한이 없습니다.");
         jobPost.setStatus(JobPostStatus.CLOSE);
         jobPost = jobPostRepository.save(jobPost);
     }
 
     @Transactional
-    public JobPostRes updateQuestionList(long id, JobPostQuestionListUpdateReq req){
+    public JobPostRes updateQuestionList(long id, JobPostQuestionListUpdateReq req) {
         Long userId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
         Employer employer = employerRepository.findById(userId)
                 .orElseThrow(() -> new AccessDeniedException("고용주가 아닙니다."));
         JobPost jobPost = jobPostRepository.findById(id)
-                .orElseThrow(()-> new JobPostNotFoundException(id,"해당 공고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id, "해당 공고를 찾을 수 없습니다."));
         boolean isMine = jobPost.getEmployer().getId().equals(employer.getId());
-        if (!isMine) throw new JobPostPermissionException(id,"공고 질문을 수정할 권한이 없습니다.");
+        if (!isMine) throw new JobPostPermissionException(id, "공고 질문을 수정할 권한이 없습니다.");
 
         jobPost.setQuestionList(JobPostQuestionListUpdateReq.toQuestionList(req));
         jobPost = jobPostRepository.save(jobPost);
