@@ -158,6 +158,34 @@ jobs:
           target: ${{ secrets.SERVER_APP_DIR }}
           strip_components: 1
           overwrite: true
+      - name: Write .env and link to systemd
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p ${{ secrets.SERVER_APP_DIR }}
+            # 1) .env 생성 (레포 시크릿 값 주입)
+            cat > ${{ secrets.SERVER_APP_DIR }}/.env <<'EOF'
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NEON_JDBC_URL=${{ secrets.NEON_JDBC_URL }}
+            NEON_USERNAME=${{ secrets.NEON_USERNAME }}
+            NEON_PASSWORD=${{ secrets.NEON_PASSWORD }}
+            NCP_ACCESS_KEY=${{ secrets.NCP_ACCESS_KEY }}
+            NCP_SECRET_KEY=${{ secrets.NCP_SECRET_KEY }}
+            EOF
+            chmod 600 ${{ secrets.SERVER_APP_DIR }}/.env
+            
+            # 2) systemd drop-in 으로 EnvironmentFile 연결 (없으면 생성/있으면 갱신)
+            sudo mkdir -p /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d
+            sudo bash -c 'cat > /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d/override.conf <<EOC
+            [Service]
+            EnvironmentFile=${{ secrets.SERVER_APP_DIR }}/.env
+            EOC'
+            # 유닛 재로딩 (첫 설정/변경 시 필수)
+            sudo systemctl daemon-reload
 
       - name: Restart service (systemd)
         uses: appleboy/ssh-action@v1.0.3
