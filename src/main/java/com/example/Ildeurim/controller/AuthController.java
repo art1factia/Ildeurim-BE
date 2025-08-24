@@ -53,7 +53,7 @@ public class AuthController {
             Optional<Long> userIdOpt = (req.userType() == UserType.WORKER)
                     ? workerRepository.findIdByPhoneNumber(req.phone())
                     : employerRepository.findIdByPhoneNumber(req.phone());
-            String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 60);
+            String access = jwtUtil.generateAccessToken(userIdOpt.get(), req.userType(), req.phone(), 360);
             return ResponseEntity.ok(
                     new ApiResponse<>(true, 200, "existing user login", new JwtRes(access, false))
             );
