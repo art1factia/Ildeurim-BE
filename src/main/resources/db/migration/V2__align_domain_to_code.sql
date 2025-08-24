@@ -1,44 +1,48 @@
 -- ==========================================
--- V2__align_domain_to_code.sql  (PostgreSQL, Flyway)
--- - camelCase → snake_case 정리
--- - FK/인덱스/제약 보정
--- - 도메인 코드(JPA) 컬럼/타입에 맞춤
+-- V2__align_domain_to_code.sql  (PostgreSQL)
+-- - camelCase → snake_case 리네임(안전 함수)
+-- - FK/인덱스/체크 보정
+-- - 도메인(JPA) 스키마와 정합화
 -- ==========================================
 
+-- 안전 리네임 유틸: old와 new가 둘 다 있으면 데이터 병합 후 old 삭제,
+-- old만 있으면 RENAME, old가 없으면 아무 것도 안 함.
+CREATE OR REPLACE FUNCTION safe_rename_column(tbl regclass, old_name text, new_name text)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_attribute WHERE attrelid = tbl AND attname = old_name AND NOT attisdropped
+  ) THEN
+    RETURN;
+END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_attribute WHERE attrelid = tbl AND attname = new_name AND NOT attisdropped
+  ) THEN
+    EXECUTE format('UPDATE %s SET %I = COALESCE(%I, %I)', tbl, new_name, new_name, old_name);
+EXECUTE format('ALTER TABLE %s DROP COLUMN %I', tbl, old_name);
+ELSE
+    EXECUTE format('ALTER TABLE %s RENAME COLUMN %I TO %I', tbl, old_name, new_name);
+END IF;
+END
+$$;
+
 -------------------------------
--- helper: 테이블 존재 검사
+-- employer
 -------------------------------
 DO $$
 BEGIN
-  -- nothing, just ensure DO-blocks are allowed
+  PERFORM safe_rename_column('employer','bossname','boss_name');
+  PERFORM safe_rename_column('employer','phonenumber','phone_number');
+  PERFORM safe_rename_column('employer','companyname','company_name');
+  PERFORM safe_rename_column('employer','companylocation','company_location');
+  PERFORM safe_rename_column('employer','companynumber','company_number');
+  PERFORM safe_rename_column('employer','defaultquestionlist','default_question_list');
 END$$;
 
--------------------------------
--- 1) employer 컬럼 리네임
--------------------------------
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='bossname') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN bossname TO boss_name';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='phonenumber') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN phonenumber TO phone_number';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='companyname') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN companyname TO company_name';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='companylocation') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN companylocation TO company_location';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='companynumber') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN companynumber TO company_number';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer' AND column_name='defaultquestionlist') THEN
-    EXECUTE 'ALTER TABLE employer RENAME COLUMN defaultquestionlist TO default_question_list';
-END IF;
-END$$;
-
--- NOT NULL 보정(데이터에 NULL 있으면 실패하므로, 적용 전 미리 점검 권장)
+-- NOT NULL (NULL 존재 시 실패하므로 사전 점검 권장)
 ALTER TABLE employer
     ALTER COLUMN name             SET NOT NULL,
 ALTER COLUMN email            SET NOT NULL,
@@ -48,7 +52,7 @@ ALTER COLUMN email            SET NOT NULL,
   ALTER COLUMN company_location SET NOT NULL,
   ALTER COLUMN company_number   SET NOT NULL;
 
--- 유니크 인덱스(존재하지 않을 때만 생성)
+-- 유니크 인덱스(없을 때만)
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE tablename='employer' AND indexname='ux_employer_email') THEN
@@ -63,115 +67,75 @@ END IF;
 END$$;
 
 -- employerJobField → employer_job_field
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.employer_job_field') IS NULL AND to_regclass('public.employerjobfield') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE employerjobfield RENAME TO employer_job_field';
 END IF;
-END$$;
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('employer_job_field','employerid','employer_id');
+  PERFORM safe_rename_column('employer_job_field','jobfield','job_field');
+END $$;
 
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer_job_field' AND column_name='employerid') THEN
-    EXECUTE 'ALTER TABLE employer_job_field RENAME COLUMN employerid TO employer_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='employer_job_field' AND column_name='jobfield') THEN
-    EXECUTE 'ALTER TABLE employer_job_field RENAME COLUMN jobfield TO job_field';
-END IF;
-END$$;
-
--- FK 보정(없을 때만 추가)
-DO $$
-BEGIN
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_employer_job_field_employer') THEN
-    EXECUTE 'ALTER TABLE employer_job_field ADD CONSTRAINT fk_employer_job_field_employer
+    EXECUTE 'ALTER TABLE employer_job_field
+             ADD CONSTRAINT fk_employer_job_field_employer
              FOREIGN KEY (employer_id) REFERENCES employer(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 -------------------------------
--- 2) worker 컬렉션 테이블 리네임
+-- worker 컬렉션 (ElementCollection)
 -------------------------------
 -- workerBlgs → worker_blg
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.worker_blg') IS NULL AND to_regclass('public.workerblgs') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE workerblgs RENAME TO worker_blg';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='worker_blg' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE worker_blg RENAME COLUMN workerid TO worker_id';
-END IF;
-END$$;
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('worker_blg','workerid','worker_id');
+END $$;
 
 -- workerJobInterests → worker_job_interests
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.worker_job_interests') IS NULL AND to_regclass('public.workerjobinterests') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE workerjobinterests RENAME TO worker_job_interests';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='worker_job_interests' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE worker_job_interests RENAME COLUMN workerid TO worker_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='worker_job_interests' AND column_name='jobfield') THEN
-    EXECUTE 'ALTER TABLE worker_job_interests RENAME COLUMN jobfield TO job_field';
-END IF;
-END$$;
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('worker_job_interests','workerid','worker_id');
+  PERFORM safe_rename_column('worker_job_interests','jobfield','job_field');
+END $$;
 
 -------------------------------
--- 3) career 컬럼 리네임 + FK
+-- career
 -------------------------------
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN workerid TO worker_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='mainduties') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN mainduties TO main_duties';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='companyname') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN companyname TO company_name';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='jobfield') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN jobfield TO job_field';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='startdate') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN startdate TO start_date';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='enddate') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN enddate TO end_date';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='career' AND column_name='isopening') THEN
-    EXECUTE 'ALTER TABLE career RENAME COLUMN isopening TO is_opening';
-END IF;
-END$$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('career','workerid','worker_id');
+  PERFORM safe_rename_column('career','mainduties','main_duties');
+  PERFORM safe_rename_column('career','companyname','company_name');
+  PERFORM safe_rename_column('career','jobfield','job_field');
+  PERFORM safe_rename_column('career','startdate','start_date');
+  PERFORM safe_rename_column('career','enddate','end_date');
+  PERFORM safe_rename_column('career','isopening','is_opening');
+END $$;
 
--- FK 재정의(이미 있으면 스킵)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM   pg_constraint
-    WHERE  conname='fk_career_worker'
-  ) THEN
-    EXECUTE 'ALTER TABLE career ADD CONSTRAINT fk_career_worker
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_career_worker') THEN
+    EXECUTE 'ALTER TABLE career
+             ADD CONSTRAINT fk_career_worker
              FOREIGN KEY (worker_id) REFERENCES worker(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_career_worker ON career(worker_id);
 
 -------------------------------
--- 4) job_post 대정리
+-- job_post
 -------------------------------
--- 새 컬럼 생성
+-- 새 컬럼(없을 때만)
 ALTER TABLE job_post
     ADD COLUMN IF NOT EXISTS employer_id           BIGINT,
     ADD COLUMN IF NOT EXISTS payment_type          VARCHAR(32),
@@ -192,51 +156,48 @@ ALTER TABLE job_post
     ADD COLUMN IF NOT EXISTS question_list         JSONB,
     ADD COLUMN IF NOT EXISTS save_question_list    BOOLEAN DEFAULT FALSE;
 
--- camelCase → snake_case 값 이관 (있는 컬럼만)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employerid') THEN
-    EXECUTE 'UPDATE job_post SET employer_id = COALESCE(employer_id, employerid)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='worktype') THEN
-    EXECUTE 'UPDATE job_post SET work_type = COALESCE(work_type, worktype)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workdayscount') THEN
-    EXECUTE 'UPDATE job_post SET work_days_count = COALESCE(work_days_count, workdayscount)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='educationrequirement') THEN
-    EXECUTE 'UPDATE job_post SET education_requirement = COALESCE(education_requirement, educationrequirement)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employmenttype') THEN
-    EXECUTE 'UPDATE job_post SET employment_type = COALESCE(employment_type, employmenttype)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='jobfield') THEN
-    EXECUTE 'UPDATE job_post SET job_field = COALESCE(job_field, jobfield)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workplace') THEN
-    EXECUTE 'UPDATE job_post SET work_place = COALESCE(work_place, workplace)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workstarttime') THEN
-    EXECUTE 'UPDATE job_post SET work_start_time = COALESCE(work_start_time, workstarttime)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workendtime') THEN
-    EXECUTE 'UPDATE job_post SET work_end_time = COALESCE(work_end_time, workendtime)';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='questionlist') THEN
-    EXECUTE 'UPDATE job_post SET question_list = COALESCE(question_list, questionlist)';
-END IF;
-  -- expirydate(date) → expiry_date(timestamp)
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='expirydate') THEN
-    EXECUTE 'UPDATE job_post SET expiry_date = COALESCE(expiry_date, expirydate::timestamp) WHERE expiry_date IS NULL';
-END IF;
-END$$;
+-- camelCase → snake_case 값 이관(있을 때만)
+DO $$ BEGIN
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employerid')
+               THEN (EXECUTE 'UPDATE job_post SET employer_id = COALESCE(employer_id, employerid)') END;
 
--- start_date가 비어있으면 created_at로 보정
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='worktype')
+               THEN (EXECUTE 'UPDATE job_post SET work_type = COALESCE(work_type, worktype)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workdayscount')
+               THEN (EXECUTE 'UPDATE job_post SET work_days_count = COALESCE(work_days_count, workdayscount)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='educationrequirement')
+               THEN (EXECUTE 'UPDATE job_post SET education_requirement = COALESCE(education_requirement, educationrequirement)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='employmenttype')
+               THEN (EXECUTE 'UPDATE job_post SET employment_type = COALESCE(employment_type, employmenttype)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='jobfield')
+               THEN (EXECUTE 'UPDATE job_post SET job_field = COALESCE(job_field, jobfield)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workplace')
+               THEN (EXECUTE 'UPDATE job_post SET work_place = COALESCE(work_place, workplace)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workstarttime')
+               THEN (EXECUTE 'UPDATE job_post SET work_start_time = COALESCE(work_start_time, workstarttime)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='workendtime')
+               THEN (EXECUTE 'UPDATE job_post SET work_end_time = COALESCE(work_end_time, workendtime)') END;
+
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='questionlist')
+               THEN (EXECUTE 'UPDATE job_post SET question_list = COALESCE(question_list, questionlist)') END;
+
+  -- expirydate(date) → expiry_date(timestamp)
+  PERFORM CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='expirydate')
+               THEN (EXECUTE 'UPDATE job_post SET expiry_date = COALESCE(expiry_date, expirydate::timestamp) WHERE expiry_date IS NULL') END;
+END $$;
+
+-- start_date가 없으면 created_at로 보정
 UPDATE job_post SET start_date = COALESCE(start_date, created_at) WHERE start_date IS NULL;
 
--- careerRequirement(VARCHAR) → BOOLEAN 유추
-DO $$
-BEGIN
+-- careerRequirement(string/enum) → boolean 유추(있을 때만)
+DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post' AND column_name='careerrequirement') THEN
     EXECUTE $Q$
 UPDATE job_post
@@ -250,9 +211,9 @@ SET career_requirement = COALESCE(
                          )
     $Q$;
 END IF;
-END$$;
+END $$;
 
--- 낡은 컬럼 제거
+-- 낡은 컬럼 제거(있으면)
 ALTER TABLE job_post
 DROP COLUMN IF EXISTS employerid,
   DROP COLUMN IF EXISTS worktype,
@@ -267,7 +228,7 @@ DROP COLUMN IF EXISTS employerid,
   DROP COLUMN IF EXISTS expirydate,
   DROP COLUMN IF EXISTS careerrequirement;
 
--- NOT NULL 제약(데이터에 NULL 있으면 실패함)
+-- 기본값/NOT NULL 강화 (NULL 존재 시 실패 가능)
 UPDATE job_post SET save_question_list = COALESCE(save_question_list, FALSE);
 ALTER TABLE job_post
     ALTER COLUMN title                 SET NOT NULL,
@@ -290,24 +251,23 @@ ALTER COLUMN content               SET NOT NULL,
   ALTER COLUMN save_question_list    SET NOT NULL,
   ALTER COLUMN employer_id           SET NOT NULL;
 
--- FK(기존 employerid FK 있었을 수 있으니 먼저 제거 후 새로 추가)
+-- FK 재정의(중복/이전 이름 FK 제거 후 보정)
 DO $$
-DECLARE
-c_name text;
+DECLARE c_name text;
 BEGIN
 FOR c_name IN
 SELECT conname
 FROM   pg_constraint
 WHERE  conrelid = 'job_post'::regclass
     AND    contype = 'f'
-    AND    conkey  @> ARRAY[
-      (SELECT attnum FROM pg_attribute WHERE attrelid='job_post'::regclass AND attname='employer_id')
-    ]::smallint[]
   LOOP
-    -- 이미 employer_id에 대한 FK가 있으면 제거하고 새 이름으로 재생성
-    EXECUTE format('ALTER TABLE job_post DROP CONSTRAINT %I', c_name);
+    -- 모든 FK 검사해서 employer_id 대상 아닌 것만 유지하려면 더 정교한 필터가 필요하지만,
+    -- 여기선 동일 이름 재생성을 위해 중복 FK가 있으면 제거
+    IF c_name = 'fk_job_post_employer' THEN
+      EXECUTE format('ALTER TABLE job_post DROP CONSTRAINT %I', c_name);
+END IF;
 END LOOP;
-  -- 새 FK 추가(없으면)
+
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_job_post_employer') THEN
     EXECUTE 'ALTER TABLE job_post
              ADD CONSTRAINT fk_job_post_employer
@@ -321,260 +281,197 @@ CREATE INDEX IF NOT EXISTS idx_job_post_employer ON job_post(employer_id);
 DROP INDEX IF EXISTS idx_job_post_status_created;
 CREATE INDEX IF NOT EXISTS idx_job_post_status_created ON job_post(status, created_at DESC);
 
-DO $$
-BEGIN
+DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'job_post'::regclass AND conname='chk_jobpost_questionlist_json'
+    WHERE conrelid='job_post'::regclass AND conname='chk_jobpost_questionlist_json'
   ) THEN
     EXECUTE 'ALTER TABLE job_post DROP CONSTRAINT chk_jobpost_questionlist_json';
 END IF;
 EXECUTE 'ALTER TABLE job_post
            ADD CONSTRAINT chk_jobpost_questionlist_json
            CHECK (question_list IS NULL OR jsonb_typeof(question_list) = ''array'')';
-END$$;
+END $$;
 
--- 컬렉션 테이블들 리네임/보정
+-- JSONB GIN
+CREATE INDEX IF NOT EXISTS idx_job_post_questionlist_gin ON job_post USING GIN (question_list);
+
+-- 컬렉션 테이블 리네임/보정
 -- jobPostWorkDays → job_post_work_days
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.job_post_work_days') IS NULL AND to_regclass('public.jobpostworkdays') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE jobpostworkdays RENAME TO job_post_work_days';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_work_days' AND column_name='jobpostid') THEN
-    EXECUTE 'ALTER TABLE job_post_work_days RENAME COLUMN jobpostid TO job_post_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_work_days' AND column_name='workday') THEN
-    EXECUTE 'ALTER TABLE job_post_work_days RENAME COLUMN workday TO work_day';
-END IF;
-END$$;
-
-DO $$
-BEGIN
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('job_post_work_days','jobpostid','job_post_id');
+  PERFORM safe_rename_column('job_post_work_days','workday','work_day');
+END $$;
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_job_post_work_days_post') THEN
     EXECUTE 'ALTER TABLE job_post_work_days
              ADD CONSTRAINT fk_job_post_work_days_post
              FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 -- jobPostApplyMethods → job_post_apply_methods
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.job_post_apply_methods') IS NULL AND to_regclass('public.jobpostapplymethods') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE jobpostapplymethods RENAME TO job_post_apply_methods';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_apply_methods' AND column_name='jobpostid') THEN
-    EXECUTE 'ALTER TABLE job_post_apply_methods RENAME COLUMN jobpostid TO job_post_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_apply_methods' AND column_name='applymethod') THEN
-    EXECUTE 'ALTER TABLE job_post_apply_methods RENAME COLUMN applymethod TO apply_method';
-END IF;
-END$$;
-
-DO $$
-BEGIN
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('job_post_apply_methods','jobpostid','job_post_id');
+  PERFORM safe_rename_column('job_post_apply_methods','applymethod','apply_method');
+END $$;
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_job_post_apply_methods_post') THEN
     EXECUTE 'ALTER TABLE job_post_apply_methods
              ADD CONSTRAINT fk_job_post_apply_methods_post
              FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
--- jobPostJobFields → job_post_job_fields  (현재 도메인 필드명이 Set<ApplyMethod> applyMethod 라서 값 컬럼을 apply_method로 맞춤)
-DO $$
-BEGIN
+-- jobPostJobFields → job_post_job_fields (값 컬럼을 apply_method로 통일)
+DO $$ BEGIN
   IF to_regclass('public.job_post_job_fields') IS NULL AND to_regclass('public.jobpostjobfields') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE jobpostjobfields RENAME TO job_post_job_fields';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_job_fields' AND column_name='jobpostid') THEN
-    EXECUTE 'ALTER TABLE job_post_job_fields RENAME COLUMN jobpostid TO job_post_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job_post_job_fields' AND column_name='jobfield') THEN
-    EXECUTE 'ALTER TABLE job_post_job_fields RENAME COLUMN jobfield TO apply_method';
-END IF;
-END$$;
-
-DO $$
-BEGIN
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('job_post_job_fields','jobpostid','job_post_id');
+  PERFORM safe_rename_column('job_post_job_fields','jobfield','apply_method');
+END $$;
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_job_post_job_fields_post') THEN
     EXECUTE 'ALTER TABLE job_post_job_fields
              ADD CONSTRAINT fk_job_post_job_fields_post
              FOREIGN KEY (job_post_id) REFERENCES job_post(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 -------------------------------
--- 5) application 정리
+-- application
 -------------------------------
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='application' AND column_name='jobpostid') THEN
-    EXECUTE 'ALTER TABLE application RENAME COLUMN jobpostid TO job_post_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='application' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE application RENAME COLUMN workerid TO worker_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='application' AND column_name='applicationstatus') THEN
-    EXECUTE 'ALTER TABLE application RENAME COLUMN applicationstatus TO application_status';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='application' AND column_name='applymethod') THEN
-    EXECUTE 'ALTER TABLE application RENAME COLUMN applymethod TO apply_method';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='application' AND column_name='submissiontime') THEN
-    EXECUTE 'ALTER TABLE application RENAME COLUMN submissiontime TO submission_time';
-END IF;
-END$$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('application','jobpostid','job_post_id');
+  PERFORM safe_rename_column('application','workerid','worker_id');
+  PERFORM safe_rename_column('application','applicationstatus','application_status');
+  PERFORM safe_rename_column('application','applymethod','apply_method');
+  PERFORM safe_rename_column('application','submissiontime','submission_time');
+END $$;
 
--- 유니크키/인덱스/체크
-DO $$
-BEGIN
-  -- 기존 복합 유니크 제약 제거(있으면)
+DO $$ BEGIN
+  -- 기존 중복 유니크 제거(있으면)
   IF EXISTS (
-    SELECT 1
-    FROM   pg_constraint
-    WHERE  conrelid='application'::regclass
-    AND    conname='application_jobpostid_workerid_key'
+    SELECT 1 FROM pg_constraint
+    WHERE  conrelid='application'::regclass AND conname='application_jobpostid_workerid_key'
   ) THEN
     EXECUTE 'ALTER TABLE application DROP CONSTRAINT application_jobpostid_workerid_key';
 END IF;
 
-  -- 새 유니크
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint WHERE conname='ux_application_jobpost_worker'
   ) THEN
-    EXECUTE 'ALTER TABLE application ADD CONSTRAINT ux_application_jobpost_worker UNIQUE(job_post_id, worker_id)';
+    EXECUTE 'ALTER TABLE application
+             ADD CONSTRAINT ux_application_jobpost_worker UNIQUE(job_post_id, worker_id)';
 END IF;
-END$$;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_application_job_post ON application(job_post_id);
 CREATE INDEX IF NOT EXISTS idx_application_worker   ON application(worker_id);
 
-DO $$
-BEGIN
+DO $$ BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'application'::regclass AND conname='chk_application_answers_json'
+    WHERE conrelid='application'::regclass AND conname='chk_application_answers_json'
   ) THEN
     EXECUTE 'ALTER TABLE application DROP CONSTRAINT chk_application_answers_json';
 END IF;
 EXECUTE 'ALTER TABLE application
            ADD CONSTRAINT chk_application_answers_json
            CHECK (answers IS NULL OR jsonb_typeof(answers) IN (''array'',''object''))';
-END$$;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_application_answers_gin ON application USING GIN (answers);
 
 -------------------------------
--- 6) job 정리
+-- job
 -------------------------------
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job' AND column_name='applicationid') THEN
-    EXECUTE 'ALTER TABLE job RENAME COLUMN applicationid TO application_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='job' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE job RENAME COLUMN workerid TO worker_id';
-END IF;
-END$$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('job','applicationid','application_id');
+  PERFORM safe_rename_column('job','workerid','worker_id');
+END $$;
 
--- FK/인덱스
-DO $$
-BEGIN
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_job_application') THEN
-    EXECUTE 'ALTER TABLE job ADD CONSTRAINT fk_job_application
+    EXECUTE 'ALTER TABLE job
+             ADD CONSTRAINT fk_job_application
              FOREIGN KEY (application_id) REFERENCES application(id)';
 END IF;
-END$$;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_job_application ON job(application_id);
 CREATE INDEX IF NOT EXISTS idx_job_worker ON job(worker_id);
 
 -------------------------------
--- 7) review 및 컬렉션 정리
+-- review + 컬렉션
 -------------------------------
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='review' AND column_name='workerid') THEN
-    EXECUTE 'ALTER TABLE review RENAME COLUMN workerid TO worker_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='review' AND column_name='employerid') THEN
-    EXECUTE 'ALTER TABLE review RENAME COLUMN employerid TO employer_id';
-END IF;
-END$$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('review','workerid','worker_id');
+  PERFORM safe_rename_column('review','employerid','employer_id');
+END $$;
 
-DO $$
-BEGIN
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_review_worker') THEN
-    EXECUTE 'ALTER TABLE review ADD CONSTRAINT fk_review_worker
+    EXECUTE 'ALTER TABLE review
+             ADD CONSTRAINT fk_review_worker
              FOREIGN KEY (worker_id) REFERENCES worker(id)';
 END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_review_employer') THEN
-    EXECUTE 'ALTER TABLE review ADD CONSTRAINT fk_review_employer
+    EXECUTE 'ALTER TABLE review
+             ADD CONSTRAINT fk_review_employer
              FOREIGN KEY (employer_id) REFERENCES employer(id)';
 END IF;
-END$$;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_review_worker   ON review(worker_id);
 CREATE INDEX IF NOT EXISTS idx_review_employer ON review(employer_id);
 
 -- reviewHashtags → review_hashtags
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.review_hashtags') IS NULL AND to_regclass('public.reviewhashtags') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE reviewhashtags RENAME TO review_hashtags';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='review_hashtags' AND column_name='reviewid') THEN
-    EXECUTE 'ALTER TABLE review_hashtags RENAME COLUMN reviewid TO review_id';
-END IF;
-END$$;
-
-DO $$
-BEGIN
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('review_hashtags','reviewid','review_id');
+END $$;
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_review_hashtags_review') THEN
-    EXECUTE 'ALTER TABLE review_hashtags ADD CONSTRAINT fk_review_hashtags_review
+    EXECUTE 'ALTER TABLE review_hashtags
+             ADD CONSTRAINT fk_review_hashtags_review
              FOREIGN KEY (review_id) REFERENCES review(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 -- reviewAnswers → review_answers
-DO $$
-BEGIN
+DO $$ BEGIN
   IF to_regclass('public.review_answers') IS NULL AND to_regclass('public.reviewanswers') IS NOT NULL THEN
     EXECUTE 'ALTER TABLE reviewanswers RENAME TO review_answers';
 END IF;
-END$$;
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='review_answers' AND column_name='reviewid') THEN
-    EXECUTE 'ALTER TABLE review_answers RENAME COLUMN reviewid TO review_id';
-END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='review_answers' AND column_name='evaluationtype') THEN
-    EXECUTE 'ALTER TABLE review_answers RENAME COLUMN evaluationtype TO evaluation_type';
-END IF;
-END$$;
-
-DO $$
-BEGIN
+END $$;
+DO $$ BEGIN
+  PERFORM safe_rename_column('review_answers','reviewid','review_id');
+  PERFORM safe_rename_column('review_answers','evaluationtype','evaluation_type');
+END $$;
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='fk_review_answers_review') THEN
-    EXECUTE 'ALTER TABLE review_answers ADD CONSTRAINT fk_review_answers_review
+    EXECUTE 'ALTER TABLE review_answers
+             ADD CONSTRAINT fk_review_answers_review
              FOREIGN KEY (review_id) REFERENCES review(id) ON DELETE CASCADE';
 END IF;
-END$$;
+END $$;
 
 -- 끝.
