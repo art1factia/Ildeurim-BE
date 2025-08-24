@@ -64,8 +64,8 @@ public class SecurityConfig {
         ));
 
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization","Content-Type"));
-        cfg.setExposedHeaders(List.of("Authorization"));
+        cfg.setAllowedHeaders(List.of("token","Content-Type"));
+        cfg.setExposedHeaders(List.of("token"));
         cfg.setAllowCredentials(true); // 쿠키/인증정보 사용 시 true
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
