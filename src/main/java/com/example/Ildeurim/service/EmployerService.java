@@ -62,7 +62,7 @@ public class EmployerService {
         employerRepository.save(employer);
 
         // 4) Access 토큰 발급 (ROLE_WORKER 포함)
-        String accessToken = jwtUtil.generateAccessToken(employer.getId(), UserType.EMPLOYER, phone, 360);
+        String accessToken = jwtUtil.generateAccessToken(employer.getId(), UserType.EMPLOYER, phone, 2880);
         long expEpochSec = jwtUtil.getExpiresAtEpochSeconds(accessToken);
 
         return new EmployerSignupRes(employer.getId(), accessToken, expEpochSec);
