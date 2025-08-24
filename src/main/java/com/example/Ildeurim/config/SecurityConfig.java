@@ -36,15 +36,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reg -> reg
-                        // ★ 프리플라이트 허용
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/health/**").permitAll()
+                        .requestMatchers("/error").permitAll()                // ★ 추가
+                        .requestMatchers("/actuator/health", "/health/**").permitAll()
                         .requestMatchers("/debug/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()              // OTP 요청/검증
-                        .requestMatchers("/workers/signup").hasAuthority("SCOPE_signup")
-                        .requestMatchers("/employers/signup").hasAuthority("SCOPE_signup") // 가입 단계 API
-                        .anyRequest().hasAnyRole("WORKER","EMPLOYER")          // 나머지는 정상 접근 토큰 필요
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/workers/signup", "/employers/signup").hasAuthority("SCOPE_signup")
+                        .anyRequest().hasAnyRole("WORKER","EMPLOYER")
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req,res,e) -> res.sendError(401, "UNAUTHORIZED")) // 인증 없음
+                        .accessDeniedHandler((req,res,e) -> res.sendError(403, "FORBIDDEN"))          // 권한 없음
+                )
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -61,7 +65,7 @@ public class SecurityConfig {
         cfg.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "https://*.nip.io"         // 예: https://app.81.123.168.184.nip.io 허용
+                "https://app.184.168.123.81.nip.io"         // 예: https://app.81.123.168.184.nip.io 허용
                 // 필요 시 실제 배포 도메인 추가
         ));
 
