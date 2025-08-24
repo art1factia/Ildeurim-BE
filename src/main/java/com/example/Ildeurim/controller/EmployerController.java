@@ -55,6 +55,12 @@ public class EmployerController {
         return ResponseEntity.ok(new ApiResponse(true, 200, "update employer me success", res));
     }
 
+    @PatchMapping("/me/questionList")
+    public ResponseEntity<ApiResponse> updateEmployerQuestionList(@RequestBody EmployerQuestionListUpdateReq req) {
+        EmployerRes res = employerService.updateQuestionList(req);
+        return ResponseEntity.ok(new ApiResponse(true, 200, "update employer question list success", res));
+    }
+
 
 
 }

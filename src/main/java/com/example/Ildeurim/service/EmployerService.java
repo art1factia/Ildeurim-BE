@@ -98,6 +98,16 @@ public class EmployerService {
         employer = employerRepository.save(employer);
         return EmployerRes.from(employer);
     }
+    @Transactional
+    public EmployerRes updateQuestionList(EmployerQuestionListUpdateReq req){
+        Long id = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+        Employer employer = employerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("해당 고용주를 찾을 수 없습니다."));
+        employer.setDefaultQuestionList(req.questionList());
+        employer = employerRepository.save(employer);
+        return EmployerRes.from(employer);
+    }
 
 //
 
