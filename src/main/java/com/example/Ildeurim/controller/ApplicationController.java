@@ -99,6 +99,14 @@ public class ApplicationController {
         );
     }
 
+    @PatchMapping("/{id}/confirmPhoneApply")
+    public ResponseEntity<ApiResponse> phoneApplyConfirm(@PathVariable long id) {
+        ApplicationRes res = applicationService.confirmPhoneApplication(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new ApiResponse(true, HttpStatus.OK.value(), "전화 지원이 확정되었습니다.", res)
+        );
+    }
+
 
     /*--------------------- 구직자의 지원 조회 관련 컨트롤러---------------------*/
     @GetMapping("/me")
