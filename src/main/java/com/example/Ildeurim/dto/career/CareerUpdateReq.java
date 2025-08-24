@@ -8,10 +8,10 @@ import java.time.LocalDate;
 public record CareerUpdateReq(
         String title,
         String companyName,
-        LocalDate startDate,
-        LocalDate endDate,
-        WorkPlace workplace,
+        String startDate,
+        String endDate,
+        String workplace,
         String mainDuties,
         Boolean isOpening,
-        JobField jobField
+        String jobField
 ) {}

@@ -8,10 +8,10 @@ import java.time.LocalDate;
 public record CareerCreateReq(
         String title,
         String companyName,
-        LocalDate startDate,
-        LocalDate endDate,        // ❗ 필수
-        WorkPlace workplace,
+        String startDate,
+        String endDate,        // ❗ 필수
+        String workplace,
         String mainDuties,
         Boolean isOpening,
-        JobField jobField         // 단일 Enum
+        String jobField         // 단일 Enum
 ) {}

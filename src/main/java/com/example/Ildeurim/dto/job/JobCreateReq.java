@@ -7,8 +7,7 @@ import com.example.Ildeurim.commons.enums.worker.WorkPlace;
  */
 public record JobCreateReq(
         Long workerId,          // 근로자 ID
+        Long applicationId,
         String jobTitle,        // 직무명
-        WorkPlace workPlace,    // 근무지 ENUM
-        String contractUrl,     // 계    약서 URL (optional)
-        String contractCore     // 계약서 요약 JSON 문자열 (optional)
+        String workPlace    // 근무지 ENUM
 ) {}
