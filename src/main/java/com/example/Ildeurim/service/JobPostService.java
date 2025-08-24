@@ -62,6 +62,7 @@ public class JobPostService {
 
         JobPost jobPost = req.toEntity();
         jobPost.setEmployer(employer);
+        jobPost.setSaveQuestionList(true);
         jobPost = jobPostRepository.save(jobPost);
         return JobPostRes.from(jobPost);
     }
