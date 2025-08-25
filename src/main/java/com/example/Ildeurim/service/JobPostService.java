@@ -3,10 +3,13 @@ package com.example.Ildeurim.service;
 import com.example.Ildeurim.auth.AuthContext;
 import com.example.Ildeurim.command.JobPostUpdateCmd;
 import com.example.Ildeurim.commons.enums.application.ApplicationStatus;
+import com.example.Ildeurim.commons.enums.jobpost.JobField;
 import com.example.Ildeurim.commons.enums.jobpost.JobPostStatus;
+import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Employer;
 import com.example.Ildeurim.domain.JobPost;
+import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.jobpost.*;
 import com.example.Ildeurim.exception.jobPost.JobPostNotFoundException;
 import com.example.Ildeurim.exception.jobPost.JobPostPermissionException;
@@ -14,13 +17,14 @@ import com.example.Ildeurim.mapper.*;
 import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.JobPostRepository;
+import com.example.Ildeurim.repository.WorkerRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,7 @@ public class JobPostService {
     private final WorkPlaceMapper workPlaceMapper;
     private final DateMapper dateMapper;
     private final ApplicationRepository applicationRepository;
+    private final WorkerRepository workerRepository;
 
     //공지글 전체 조회
     @Transactional(readOnly = true)
@@ -68,13 +73,35 @@ public class JobPostService {
     }
 
     @Transactional(readOnly = true)
-    public List<SimpleJobPostRes> getJobPostList(JobPostFilter req) {
-        List<JobPost> jobPostList = jobPostRepository.findAll(); //TODO: findAll 대신 필터 기반으로 변경
-        List<SimpleJobPostRes> jobPostResList = jobPostList.stream()
-                .map(article -> SimpleJobPostRes.of(article))
+    public List<SimpleJobPostRes> getJobPostList() {
+        Long id = AuthContext.userId()
+                .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
+
+        // 선호 지역 세트(없으면 빈 세트)
+        Set<WorkPlace> preferred = workerRepository.findById(id)
+                .map(Worker::getBLG)      // Set<WorkPlace>
+                .orElse(Collections.emptySet());
+
+        // 전체 공고 조회
+        List<JobPost> all = jobPostRepository.findAll();
+
+        // 선호 지역이 없으면 정렬 없이 매핑 후 반환
+        if (preferred == null || preferred.isEmpty()) {
+            return all.stream().map(SimpleJobPostRes::of).toList();
+        }
+
+        // 선호 지역이 있으면: 선호 지역(0) → 비선호(1) → id DESC
+        List<JobPost> sorted = all.stream()
+                .sorted(
+                        Comparator
+                                .<JobPost>comparingInt(jp -> preferred.contains(jp.getWorkPlace()) ? 0 : 1)
+                                .thenComparing(JobPost::getId, Comparator.reverseOrder())
+                )
                 .toList();
-        return jobPostResList;
+
+        return sorted.stream().map(SimpleJobPostRes::of).toList();
     }
+
 
     @Transactional(readOnly = true)
     public List<JobPostRes> getMeJobPosts() {
