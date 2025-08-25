@@ -6,16 +6,16 @@ import com.example.Ildeurim.commons.enums.worker.WorkPlace;
 import com.example.Ildeurim.domain.Application;
 import com.example.Ildeurim.domain.Job;
 import com.example.Ildeurim.domain.Worker;
-import com.example.Ildeurim.dto.job.JobContractReq;
-import com.example.Ildeurim.dto.job.JobCreateReq;
-import com.example.Ildeurim.dto.job.JobRes;
-import com.example.Ildeurim.dto.job.JobUpdateReq;
+import com.example.Ildeurim.dto.job.*;
+import com.example.Ildeurim.gpt.ContractPrompts;
 import com.example.Ildeurim.repository.ApplicationRepository;
 import com.example.Ildeurim.exception.job.JobNotFoundException;
 import com.example.Ildeurim.exception.job.JobPermissionException;
 import com.example.Ildeurim.exception.jobPost.JobPostNotFoundException;
 import com.example.Ildeurim.repository.JobRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +35,9 @@ public class JobService {
     private final WorkerRepository workerRepository;
     private final ObjectStorageService storage;
     private final ApplicationRepository applicationRepository;
+    private final OcrService ocr;
+    private final LlmService llm;
+    private final ObjectMapper om;
 
     // 근로 생성 (isWorking 기본 true)
     @Transactional
@@ -122,23 +126,47 @@ public class JobService {
 
     // 계약서 추가/수정
     @Transactional
-    public JobRes upsertContract(Long id, MultipartFile file) {
+    public JobRes upsertContract(Long id, MultipartFile file) throws IOException {
         Long loginUserId = AuthContext.userId()
                 .orElseThrow(() -> new AccessDeniedException("인증되지 않은 사용자입니다."));
 
         Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new JobPostNotFoundException(id,"근로를 찾을 수 없습니다."));
+                .orElseThrow(() -> new JobPostNotFoundException(id, "근로를 찾을 수 없습니다."));
 
         if (!job.getWorker().getId().equals(loginUserId)) {
-            throw new JobPermissionException(id,"계약서를 수정할 권한이 없습니다.");
+            throw new JobPermissionException(id, "계약서를 수정할 권한이 없습니다.");
         }
+
+        // 1) 파일 업로드(기존 URL 교체)
         String newContractUrl = storage.uploadContract(job.getId(), file, job.getContractUrl());
-
         job.setContractUrl(newContractUrl);
-        //TODO: contract 생성 GPT 연동
-//        job.setContractCore(req.contractCore());
 
+        // 2) OCR → LLM 요약(JSON)
+        JsonNode core = null;
+        try {
+            String text = ocr.extractText(file.getBytes());
+
+            // LLM에서 바로 JsonNode로 받기: 유효 JSON만 들어옴
+            core = llm.completeJson(
+                    ContractPrompts.SYSTEM,
+                    ContractPrompts.userPrompt(text),
+                    JsonNode.class
+            );
+        } catch (Exception e) {
+            // 안전망: 최소 스켈레톤으로 저장해두고 나중에 재시도 가능
+            var fallback = om.createObjectNode();
+            fallback.put("abstraction", "계약서 OCR/요약 중 오류가 발생했습니다. 재처리가 필요합니다.");
+            var notice = fallback.putArray("notice");
+            notice.add("원문 파일은 contractUrl 에 업로드되어 있습니다.");
+            core = fallback;
+        }
+
+        // 3) JSON → 문자열로 안전 저장
+        job.setContractCoreFromJson(core, om);
+
+        // 4) 저장
         job = jobRepository.save(job);
+
         return toRes(job);
     }
 

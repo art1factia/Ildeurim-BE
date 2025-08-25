@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -66,7 +67,7 @@ public class JobController {
 
     // 계약서 추가/수정
     @PatchMapping(value = "/{id}/contract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse> upsertContract(@PathVariable Long id, @RequestPart("file") MultipartFile file) {
+    public ResponseEntity<ApiResponse> upsertContract(@PathVariable Long id, @RequestPart("file") MultipartFile file) throws IOException {
         JobRes res = jobService.upsertContract(id, file);
         return ResponseEntity.ok(new ApiResponse(true, 200, "Contract updated", res));
     }
