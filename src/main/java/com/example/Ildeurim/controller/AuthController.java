@@ -2,10 +2,7 @@ package com.example.Ildeurim.controller;
 
 import com.example.Ildeurim.commons.enums.UserType;
 import com.example.Ildeurim.dto.ApiResponse;
-import com.example.Ildeurim.dto.otp.JwtRes;
-import com.example.Ildeurim.dto.otp.OtpSendReq;
-import com.example.Ildeurim.dto.otp.OtpVerifyReq;
-import com.example.Ildeurim.dto.otp.SignupJwtRes;
+import com.example.Ildeurim.dto.otp.*;
 import com.example.Ildeurim.jwt.JwtUtil;
 import com.example.Ildeurim.repository.EmployerRepository;
 import com.example.Ildeurim.repository.WorkerRepository;
@@ -41,9 +38,19 @@ public class AuthController {
         smsService.sendVerificationCode(phone);
         return ResponseEntity.ok("Verification code sent");
     }
-
     @PostMapping("/verify-code")
-    public ResponseEntity<ApiResponse<?>> verifyCode(@Valid @RequestBody OtpVerifyReq req) {
+    public ResponseEntity<ApiResponse<?>> verifyCode(@Valid @RequestBody OtpVerifyReq req){
+        boolean v = smsService.verifyCode(req.phone(), req.code());
+        boolean exists = workerRepository.existsByPhoneNumber(req.phone());
+                if(!exists) {
+                    exists = employerRepository.existsByPhoneNumber(req.phone());
+                }
+
+        VerifyRes res = new VerifyRes(req.phone(), exists);
+        return ResponseEntity.ok(new ApiResponse<>(v, 200, "verification" + (v ? "success" : "fail"), res));
+    }
+    @PostMapping("/signup-token")
+    public ResponseEntity<ApiResponse<?>> getSignupToken(@Valid @RequestBody getSignupTokenReq req) {
 
         boolean exists = (req.userType() == UserType.WORKER)
                 ? workerRepository.existsByPhoneNumber(req.phone())

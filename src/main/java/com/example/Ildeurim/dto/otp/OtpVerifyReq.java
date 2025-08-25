@@ -9,7 +9,5 @@ public record OtpVerifyReq(
         String phone,
         @NotBlank @Size(min = 6, max = 6)
         @Pattern(regexp = "^[0-9]{6}$")
-        String code,
-        @NotNull
-        UserType userType       // ★ 어떤 역할로 로그인할지 명시 (WORKER/EMPLOYER)
+        String code
 ) {}
