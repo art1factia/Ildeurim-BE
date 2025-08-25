@@ -1,7 +1,7 @@
 package com.example.Ildeurim.dto.otp;
 
 public record SignupJwtRes (
-        String accessToken,
+        String signupToken,
         boolean isNewbie
 ){
 }

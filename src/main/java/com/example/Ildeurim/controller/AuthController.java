@@ -1,6 +1,7 @@
 package com.example.Ildeurim.controller;
 
 import com.example.Ildeurim.commons.enums.UserType;
+import com.example.Ildeurim.domain.Worker;
 import com.example.Ildeurim.dto.ApiResponse;
 import com.example.Ildeurim.dto.otp.*;
 import com.example.Ildeurim.jwt.JwtUtil;
@@ -38,17 +39,31 @@ public class AuthController {
         smsService.sendVerificationCode(phone);
         return ResponseEntity.ok("Verification code sent");
     }
+
     @PostMapping("/verify-code")
-    public ResponseEntity<ApiResponse<?>> verifyCode(@Valid @RequestBody OtpVerifyReq req){
+    public ResponseEntity<ApiResponse<?>> verifyCode(@Valid @RequestBody OtpVerifyReq req) {
         boolean v = smsService.verifyCode(req.phone(), req.code());
         boolean exists = workerRepository.existsByPhoneNumber(req.phone());
-                if(!exists) {
-                    exists = employerRepository.existsByPhoneNumber(req.phone());
-                }
+        if(exists) {
+            Optional<Long> userIdOpt  = workerRepository.findIdByPhoneNumber(req.phone());
+            String access = jwtUtil.generateAccessToken(userIdOpt.get(), UserType.WORKER, req.phone(), 360);
+            VerifyRes res = new VerifyRes(req.phone(), !exists, v ? access : null);
+            return ResponseEntity.ok(new ApiResponse<>(v, 200, "verification" + (v ? "success" : "fail"), res));
+        }
+        if (!exists) {
+            exists = employerRepository.existsByPhoneNumber(req.phone());
+            if(exists) {
+                Optional<Long> userIdOpt  = employerRepository.findIdByPhoneNumber(req.phone());
+                String access = jwtUtil.generateAccessToken(userIdOpt.get(), UserType.EMPLOYER, req.phone(), 360);
+                VerifyRes res = new VerifyRes(req.phone(), !exists, v ? access : null);
+                return ResponseEntity.ok(new ApiResponse<>(v, 200, "verification" + (v ? "success" : "fail"), res));
+            }
+        }
 
-        VerifyRes res = new VerifyRes(req.phone(), exists);
+        VerifyRes res = new VerifyRes(req.phone(), !exists, null);
         return ResponseEntity.ok(new ApiResponse<>(v, 200, "verification" + (v ? "success" : "fail"), res));
     }
+
     @PostMapping("/signup-token")
     public ResponseEntity<ApiResponse<?>> getSignupToken(@Valid @RequestBody getSignupTokenReq req) {
 
@@ -68,7 +83,7 @@ public class AuthController {
             String signup = jwtUtil.generateSignupToken(req.userType(), req.phone(), 15);
             // 프론트는 이 토큰으로 POST /{type} 화면에서 제출
             return ResponseEntity.ok(
-                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes(signup, true))
+                    new ApiResponse<>(true, 200, "ok", new SignupJwtRes( signup, true))
             );
         }
     }
