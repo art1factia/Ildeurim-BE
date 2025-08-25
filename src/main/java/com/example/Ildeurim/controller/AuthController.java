@@ -34,10 +34,10 @@ public class AuthController {
 
 
     @PostMapping("/send-code")
-    public ResponseEntity<String> sendCode(@Valid @RequestBody OtpSendReq req) {
+    public ResponseEntity<ApiResponse<?>> sendCode(@Valid @RequestBody OtpSendReq req) {
         String phone = req.phone();
         smsService.sendVerificationCode(phone);
-        return ResponseEntity.ok("Verification code sent");
+        return ResponseEntity.ok(new ApiResponse<>(true, 200, "Verification code sent"));
     }
 
     @PostMapping("/verify-code")
