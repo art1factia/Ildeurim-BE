@@ -26,9 +26,9 @@ public class JobPostController {
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post created", res));
     }
 
-    @PostMapping("/filter")
-    public ResponseEntity<ApiResponse> getJobPostList(@RequestBody JobPostFilter req) {
-        List<SimpleJobPostRes> res = jobPostService.getJobPostList(req);
+    @GetMapping
+    public ResponseEntity<ApiResponse> getJobPostList() {
+        List<SimpleJobPostRes> res = jobPostService.getJobPostList();
         return ResponseEntity.ok(new ApiResponse(true, 200, "Job post list", res));
     }
     @GetMapping("/{id}")
