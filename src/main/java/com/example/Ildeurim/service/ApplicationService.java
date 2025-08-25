@@ -233,7 +233,7 @@ public class ApplicationService {
 
         Application newApplication = Application.builder()
                 .submissionTime(LocalDateTime.now())
-                .applicationStatus(ApplicationStatus.NEEDINTERVIEW) // '면접 진행 전' 상태로 바로 설정
+                .applicationStatus(ApplicationStatus.DRAFT) // '면접 진행 전' 상태로 바로 설정
                 .applyMethod(ApplyMethod.PHONE)
                 .isCareerIncluding(true) // 이력서 포함
                 .jobPost(jobPost)
