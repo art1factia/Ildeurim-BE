@@ -46,7 +46,7 @@ public class JobService {
                 .orElseThrow(() -> new EntityNotFoundException("worker not found"));
         Application application = applicationRepository.findById(req.applicationId())
                 .orElseThrow(() -> new EntityNotFoundException("application not found"));
-        if (!(application.getApplicationStatus().equals(ApplicationStatus.ACCEPTED))) {
+        if (!(application.getApplicationStatus().equals(ApplicationStatus.HIRED))) {
             throw new AccessDeniedException("application is not accepted");
         }
         Job job = Job.builder()
