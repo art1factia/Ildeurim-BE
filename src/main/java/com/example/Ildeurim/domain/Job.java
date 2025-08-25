@@ -2,6 +2,8 @@ package com.example.Ildeurim.domain;
 
 import com.example.Ildeurim.commons.domains.BaseEntity;
 import com.example.Ildeurim.commons.enums.worker.WorkPlace;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -34,8 +36,21 @@ public class Job extends BaseEntity {
     @Column(nullable = true)
     private String contractUrl; // 계약서 파일 URL
 
-    @Column(columnDefinition = "json", nullable = true)
-    private String contractCore; // 계약서 요약 JSON
+
+    @Column(name = "contractCore", columnDefinition = "text", nullable = false)
+    private String contractCore = "{}";
+
+    // 편의 메서드 (선택)
+    public void setContractCoreFromJson(JsonNode node,
+                                    ObjectMapper om) {
+        try { this.contractCore = om.writeValueAsString(node == null ? om.createObjectNode() : node); }
+        catch (Exception e) { throw new IllegalArgumentException("contractCore serialize failed", e); }
+    }
+    public JsonNode getContractCoreAsJson(ObjectMapper om) {
+        try { return om.readTree(this.contractCore == null ? "{}" : this.contractCore); }
+        catch (Exception e) { return om.createObjectNode(); }
+    }
+
 
     // Job.java (owning side)
     @OneToOne(fetch = FetchType.LAZY, optional = false)
