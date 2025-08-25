@@ -39,6 +39,7 @@ public class ApplicationService {
     private final JobPostRepository jobPostRepository;
     private final WorkerRepository workerRepository;
     private final EmployerRepository employerRepository;
+    //
 
     /*--------------------- 간편 지원 관련 서비스 ---------------------*/
 
