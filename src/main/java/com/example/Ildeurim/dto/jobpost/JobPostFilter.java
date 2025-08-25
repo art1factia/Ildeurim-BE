@@ -22,3 +22,4 @@ public class JobPostFilter {
     public Set<String> locationContains;     // LIKE 검색(지명 문자열)
     public Set<String> keywords;
 }
+

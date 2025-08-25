@@ -14,7 +14,7 @@ public class ContractPrompts {
 [계약서 원문]
 %s
 
-요구 출력(JSON, 필드명은 한국어 그대로):
+요구 출력(JSON, 필드명 그대로):
 {
   "abstraction": "3~4줄 간단 요약",
   "duration": "YYYY-MM-DD ~ YYYY-MM-DD (자동연장 여부 명시 또는 '미기재')",

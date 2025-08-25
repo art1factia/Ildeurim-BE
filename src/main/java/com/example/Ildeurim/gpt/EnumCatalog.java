@@ -14,20 +14,20 @@ public class EnumCatalog {
     // 라벨 예: CLEANING("청소,미화")
     private static final Map<JobField, List<String>> JOBFIELD_SYNONYMS =
             Map.ofEntries(
-                    Map.entry(JobField.AGRICULTURE,      List.of("농사","원예","어업","농업")),
-                    Map.entry(JobField.MANUFACTURING,    List.of("목공","공예","제조")),
-                    Map.entry(JobField.DELIVERY,         List.of("운전","배달","배송","퀵")),
-                    Map.entry(JobField.MECHANIC_REPAIR,  List.of("기계","금속","수리","설비")),
-                    Map.entry(JobField.CLEANING,         List.of("청소","미화","환경미화")),
-                    Map.entry(JobField.CONSTRUCTION,     List.of("건설","시설관리","현장")),
-                    Map.entry(JobField.ELECTRONICS_REPAIR,List.of("전기","전자","전기수리","전자수리")),
-                    Map.entry(JobField.CARE,             List.of("돌봄","요양","간병","시니어케어")),
-                    Map.entry(JobField.SALES,            List.of("판매","매장","마트","캐셔")),
-                    Map.entry(JobField.FOOD_SERVICE,     List.of("음식","서빙","주방","조리","식당")),
-                    Map.entry(JobField.CULTURE_RESEARCH, List.of("문화","연구","기술","IT")),
-                    Map.entry(JobField.OFFICE_FINANCE,   List.of("사무","오피스","회계","금융","행정")),
-                    Map.entry(JobField.FOOD_CLOTHE_ENV,  List.of("식품","옷","의류","환경","가공")),
-                    Map.entry(JobField.OTHER,            List.of("기타","그외"))
+                    Map.entry(JobField.AGRICULTURE, List.of("농사", "원예", "어업", "농업")),
+                    Map.entry(JobField.MANUFACTURING, List.of("목공", "공예", "제조")),
+                    Map.entry(JobField.DELIVERY, List.of("운전", "배달", "배송", "퀵")),
+                    Map.entry(JobField.MECHANIC_REPAIR, List.of("기계", "금속", "수리", "설비")),
+                    Map.entry(JobField.CLEANING, List.of("청소", "미화", "환경미화")),
+                    Map.entry(JobField.CONSTRUCTION, List.of("건설", "시설관리", "현장")),
+                    Map.entry(JobField.ELECTRONICS_REPAIR, List.of("전기", "전자", "전기수리", "전자수리")),
+                    Map.entry(JobField.CARE, List.of("돌봄", "요양", "간병", "시니어케어")),
+                    Map.entry(JobField.SALES, List.of("판매", "매장", "마트", "캐셔")),
+                    Map.entry(JobField.FOOD_SERVICE, List.of("음식", "서빙", "주방", "조리", "식당")),
+                    Map.entry(JobField.CULTURE_RESEARCH, List.of("문화", "연구", "기술", "IT")),
+                    Map.entry(JobField.OFFICE_FINANCE, List.of("사무", "오피스", "회계", "금융", "행정")),
+                    Map.entry(JobField.FOOD_CLOTHE_ENV, List.of("식품", "옷", "의류", "환경", "가공")),
+                    Map.entry(JobField.OTHER, List.of("기타", "그외"))
             );
 
     // WorkDays
@@ -96,29 +96,72 @@ public class EnumCatalog {
     }
 
     public static String allowedCatalogForPrompt() {
+        String jobFieldLabels = Arrays.stream(JobField.values())
+                .map(JobField::getLabel)
+                .collect(Collectors.joining("/ "));
+//        System.out.println(jobFieldLabels);
+
+        String workPlaceLabels = Arrays.stream(WorkPlace.values())
+                .map(WorkPlace::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String workTypeLabels = Arrays.stream(WorkType.values())
+                .map(WorkType::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String workDaysLabels = Arrays.stream(WorkDays.values())
+                .map(WorkDays::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String paymentTypeLabels = Arrays.stream(PaymentType.values())
+                .map(PaymentType::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String employmentTypeLabels = Arrays.stream(EmploymentType.values())
+                .map(EmploymentType::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String educationReqLabels = Arrays.stream(EducationRequirement.values())
+                .map(EducationRequirement::getLabel)
+                .collect(Collectors.joining("/ "));
+
+        String applyMethodLabels = Arrays.stream(ApplyMethod.values())
+                .map(ApplyMethod::getLabel)
+                .collect(Collectors.joining("/ "));
+
         return """
-                [허용 enum 값(정확히 이 중에서만 출력)]
+                [허용 '라벨' 목록(정확히 아래 라벨만 출력)]
                 
-                - jobField:
+                
+                - jobField(라벨):
                 %s
-                - workPlace: %s
-                - workType: %s
-                - workDays: %s
-                - paymentType: %s
-                - employmentType: %s
-                - educationRequirement: %s
-                - applyMethods: %s
+                - workPlace(라벨):
+                %s
+                - workType(라벨):
+                %s
+                - workDays(라벨):
+                %s
+                - paymentType(라벨):
+                %s
+                - employmentType(라벨):
+                %s
+                - educationRequirement(라벨):
+                %s
+                - applyMethods(라벨):
+                %s
                 
-                주의: 위 목록 이외의 값/철자/라벨 금지(반드시 enum 이름만 출력).
+                규칙:
+                1) enum '이름'(예: DOBONG, HOURLY) 절대 사용 금지. 반드시 위 '라벨'(예: 도봉, 시급)만 출력.
+                2) 라벨이 불명확하거나 해당 없음 → 해당 필드는 비우고, 원문은 keywords 배열에 보존. 목록에서 항목 구분자는 "/" 입니다.
                 """.formatted(
-                Arrays.stream(JobField.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(WorkPlace.values()).map(Enum::name).collect(Collectors.joining(", ")),         // ← 추가
-                Arrays.stream(WorkType.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(WorkDays.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(PaymentType.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(EmploymentType.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(EducationRequirement.values()).map(Enum::name).collect(Collectors.joining(", ")),
-                Arrays.stream(ApplyMethod.values()).map(Enum::name).collect(Collectors.joining(", "))
+                jobFieldLabels,
+                workPlaceLabels,
+                workTypeLabels,
+                workDaysLabels,
+                paymentTypeLabels,
+                employmentTypeLabels,
+                educationReqLabels,
+                applyMethodLabels
         );
     }
 
