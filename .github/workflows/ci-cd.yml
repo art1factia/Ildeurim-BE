@@ -1,0 +1,209 @@
+name: CI-CD (Gradle, JDK17)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: true
+
+env:
+  JDK_VERSION: '17'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JDK_VERSION }}
+          cache: gradle
+
+      - name: Build (Gradle)
+        run: |
+          chmod +x gradlew
+          # 필요시 테스트 포함: ./gradlew clean bootJar
+          ./gradlew --no-daemon clean bootJar -x test
+
+      - name: Upload artifact (jar)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: "**/build/libs/*.jar"
+          if-no-files-found: error
+
+  migrate:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Flyway Docker 로컬 실행 (migrations: src/main/resources/db/migration)
+      - name: Run Flyway migrations on Neon (Docker)
+        env:
+          NEON_JDBC_URL: ${{ secrets.NEON_JDBC_URL }}
+          NEON_USERNAME: ${{ secrets.NEON_USERNAME }}
+          NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+        run: |
+          # GitHub 호스트에서 Docker 사용
+          docker pull flyway/flyway:latest
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/flyway/sql" \
+            flyway/flyway:latest \
+            -url="${NEON_JDBC_URL}" \
+            -user="${NEON_USERNAME}" \
+            -password="${NEON_PASSWORD}" \
+            -baselineOnMigrate=true \
+            -locations=filesystem:/flyway/sql/src/main/resources/db/migration \
+            migrate
+
+  deploy:
+    needs: [build, migrate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact (jar)
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: .
+
+      - name: Normalize JAR → deploy/app.jar
+        run: |
+          set -e
+          JAR=$(find . -type f -name "*.jar" ! -name "*plain.jar" | head -n1)
+          [ -n "$JAR" ] || (echo "No jar found" && exit 1)
+          mkdir -p deploy
+          cp -f "$JAR" deploy/app.jar
+
+      # 여기서 서버에 둘 application.yml 을 Secrets로 생성
+      - name: Prepare application.yml (prod)
+        env:
+          NEON_JDBC_URL: ${{ secrets.NEON_JDBC_URL }}
+          NEON_USERNAME: ${{ secrets.NEON_USERNAME }}
+          NEON_PASSWORD: ${{ secrets.NEON_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NCP_ACCESS_KEY: ${{ secrets.NCP_ACCESS_KEY }}
+          NCP_SECRET_KEY: ${{ secrets.NCP_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          mkdir -p deploy
+          cat > deploy/application.yml << 'EOF'
+          spring:
+            application:
+              name: Ildeurim
+            servlet:
+              multipart:
+                max-file-size: 15MB
+                max-request-size: 15MB
+                file-size-threshold: 0
+
+            datasource:
+              url: ${NEON_JDBC_URL}
+              username: ${NEON_USERNAME}
+              password: ${NEON_PASSWORD}
+              hikari:
+                maximum-pool-size: 10
+                minimum-idle: 0
+                idle-timeout: 60000
+                data-source-properties:
+                  preferQueryMode: simple
+
+            jpa:
+              hibernate:
+                ddl-auto: validate   # prod는 validate 권장
+              properties:
+                hibernate:
+                  dialect: org.hibernate.dialect.PostgreSQLDialect
+
+            flyway:
+              enabled: true
+              baseline-on-migrate: true
+              locations: classpath:db/migration
+
+          server:
+            port: 8080
+
+          jwt:
+            secret: ${JWT_SECRET}
+            expMin: 60
+
+          ncp:
+            storage:
+              region: kr-standard
+              endpoint: https://kr.object.ncloudstorage.com
+              bucket: ildeurim-storage
+              access-key: ${NCP_ACCESS_KEY}
+              secret-key: ${NCP_SECRET_KEY}
+          openai:
+            api-key: ${OPENAI_API_KEY}
+        
+          app:
+            ocr:
+              enable: true
+              tesseractDataPath: /usr/share/tesseract-ocr/4.00/tessdata
+          EOF
+
+      - name: Verify files exist (fail fast)
+        run: |
+          for f in deploy/app.jar deploy/application.yml; do
+            [ -s "$f" ] || (echo "Missing or empty: $f" && exit 1)
+            echo "OK: $f"
+          done
+
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "deploy/app.jar,deploy/application.yml"
+          target: ${{ secrets.SERVER_APP_DIR }}
+          strip_components: 1
+          overwrite: true
+      - name: Write .env and link to systemd
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p ${{ secrets.SERVER_APP_DIR }}
+            # 1) .env 생성 (레포 시크릿 값 주입)
+            cat > ${{ secrets.SERVER_APP_DIR }}/.env <<'EOF'
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NEON_JDBC_URL=${{ secrets.NEON_JDBC_URL }}
+            NEON_USERNAME=${{ secrets.NEON_USERNAME }}
+            NEON_PASSWORD=${{ secrets.NEON_PASSWORD }}
+            NCP_ACCESS_KEY=${{ secrets.NCP_ACCESS_KEY }}
+            NCP_SECRET_KEY=${{ secrets.NCP_SECRET_KEY }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            EOF
+            chmod 600 ${{ secrets.SERVER_APP_DIR }}/.env
+            
+            # 2) systemd drop-in 으로 EnvironmentFile 연결 (없으면 생성/있으면 갱신)
+            sudo mkdir -p /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d
+            sudo bash -c 'cat > /etc/systemd/system/${{ secrets.SERVER_SERVICE }}.service.d/override.conf <<EOC
+            [Service]
+            EnvironmentFile=${{ secrets.SERVER_APP_DIR }}/.env
+            EOC'
+            # 유닛 재로딩 (첫 설정/변경 시 필수)
+            sudo systemctl daemon-reload
+
+      - name: Restart service (systemd)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_APP_DIR }}
+            sudo systemctl restart ${{ secrets.SERVER_SERVICE }}
+            sudo systemctl status  ${{ secrets.SERVER_SERVICE }} --no-pager -l

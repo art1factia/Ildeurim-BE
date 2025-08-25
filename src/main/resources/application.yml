@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: Ildeurim
+  servlet:
+    multipart:
+      max-file-size: 15MB       # 업로드 파일 1개 최대
+      max-request-size: 15MB    # 요청 전체 최대(여러 파트 합)
+      file-size-threshold: 0    # 메모리->디스크 임계(선택)
+  datasource:
+    url: ${NEON_JDBC_URL}   # jdbc:postgresql://...&sslmode=require&channelBinding=require
+    username: ${NEON_USERNAME}
+    password: ${NEON_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 0
+      idle-timeout: 60000
+      # (추후 PgBouncer transaction 모드를 쓰면)
+      data-source-properties:
+        preferQueryMode: simple
+  jpa:
+    hibernate:
+      ddl-auto: validate   # 스키마 변경은 Flyway가 담당
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET}
+  expMin: 60
+ncp:
+  storage:
+    region: kr-standard
+    endpoint: https://kr.object.ncloudstorage.com
+    bucket: ildeurim-storage
+    access-key: ${NCP_ACCESS_KEY}
+    secret-key: ${NCP_SECRET_KEY}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+
+app:
+  ocr:
+    enable: true
+    tesseractDataPath: /usr/share/tesseract-ocr/4.00/tessdata

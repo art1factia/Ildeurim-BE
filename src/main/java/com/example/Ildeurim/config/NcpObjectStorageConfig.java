@@ -1,0 +1,55 @@
+package com.example.Ildeurim.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+
+import java.net.URI;
+
+@Configuration
+public class NcpObjectStorageConfig {
+
+    @Value("${ncp.storage.endpoint:https://kr.object.ncloudstorage.com}")
+    private String endpoint;        // NCP Object Storage 엔드포인트
+    @Value("${ncp.storage.region:kr-standard}")
+    private String region;          // NCP 리전(보통 kr-standard)
+    @Value("${ncp.storage.access-key}")     // NCP 콘솔의 Access Key
+    private String accessKey;
+    @Value("${ncp.storage.secret-key}")     // NCP 콘솔의 Secret Key
+    private String secretKey;
+
+    @Bean
+    public S3Client s3Client() {
+        return S3Client.builder()
+                .endpointOverride(URI.create(endpoint))
+                .region(Region.of(region))
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true)
+                        .chunkedEncodingEnabled(false)   // 호환성 이슈 회피
+                        .build())
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
+                .build();
+    }
+
+    // NcpObjectStorageConfig.java
+    @Bean
+    public S3Presigner s3Presigner() {
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(endpoint)) // https://kr.object.ncloudstorage.com
+                .region(Region.of(region))              // kr-standard
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)))
+                .build();
+    }
+
+
+}
+
