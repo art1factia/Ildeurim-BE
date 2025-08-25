@@ -36,7 +36,8 @@ public record JobPostRes(
         Boolean saveQuestionList,
         WorkPlace workPlace,
         Long employerId,
-        String employerName
+        String employerName,
+        String companyName
 ) {
     public static JobPostRes from(JobPost j) {
         return new JobPostRes(
@@ -66,7 +67,8 @@ public record JobPostRes(
                 j.getSaveQuestionList(),
                 j.getWorkPlace(),
                 j.getEmployer().getId(),
-                j.getEmployer().getName()
+                j.getEmployer().getName(),
+                j.getEmployer().getCompanyName()
 
         );
     }
