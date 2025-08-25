@@ -14,7 +14,27 @@ import java.util.List;
 @Converter(autoApply = true)
 public class AnswerListJsonConverter implements AttributeConverter<AnswerList, String> {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    // ★ 스프링이 셋업해줄 ObjectMapper (전역 설정 반영)
+    private static ObjectMapper MAPPER;
+
+    // ★ 애플리케이션 시작 시 스프링이 호출해 줄 세터
+    public static void setObjectMapper(ObjectMapper om) {
+        MAPPER = om;
+    }
+
+    // 안전한 접근자 (테스트/비상용 fallback 포함)
+    private static ObjectMapper mapper() {
+        if (MAPPER == null) {
+            // Fallback: 스프링 컨텍스트 밖(순수 테스트 등)에서도 최소 동작 보장
+            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+            om.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            om.configure(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+            om.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            MAPPER = om;
+        }
+        return MAPPER;
+    }
+
     private static final TypeReference<List<AnswerItem>> LIST_TYPE = new TypeReference<>() {};
 
     @Override

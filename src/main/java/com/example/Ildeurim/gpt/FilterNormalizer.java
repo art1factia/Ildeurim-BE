@@ -13,6 +13,23 @@ import java.util.regex.Pattern;
 
 public class FilterNormalizer {
 
+    public static java.util.LinkedHashSet<WorkPlace> ensurePreferred(JobPostFilter f) {
+        var preferred = new java.util.LinkedHashSet<WorkPlace>();
+        if (f.workPlace != null) preferred.addAll(f.workPlace);
+
+        if (preferred.isEmpty() && f.locationContains != null) {
+            for (String w : f.locationContains) {
+                for (WorkPlace wp : WorkPlace.values()) {
+                    if (wp.getLabel().contains(w)) { // "마포" 포함시 선호로
+                        preferred.add(wp);
+                    }
+                }
+            }
+        }
+        return preferred;
+    }
+
+
     /** "주 2일 / 월 3회" 같은 표현에서 정수 하나를 추출 (첫 번째 숫자) */
     public static Integer sniffCount(String s) {
         if (s == null) return null;
@@ -112,9 +129,6 @@ public class FilterNormalizer {
         out.workPlace.addAll(EnumCatalog.resolveWorkPlace(tokens));
 
         // 3-2) LLM이 locationContains에 넣어 준 지명 재해석 → WorkPlace
-        if (in != null && in.locationContains != null && !in.locationContains.isEmpty()) {
-            out.workPlace.addAll(EnumCatalog.resolveWorkPlace(in.locationContains));
-        }
 
         // 3-3) 여전히 WorkPlace가 비어 있다면, locationContains는 그대로 유지하여 LIKE 검색에 사용
         //      (WorkPlace가 채워졌더라도 locationContains는 보조 검색용으로 남겨둘 수 있음)
